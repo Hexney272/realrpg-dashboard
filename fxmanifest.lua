@@ -43,6 +43,8 @@ files {
     'html/index.html',
     'html/assets/*.css',
     'html/assets/*.js',
+    'html/img/**/*.png',
+    'html/img/*.png',
 }
 
 -- Exports

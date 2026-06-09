@@ -127,7 +127,7 @@ const invitedPlayers = ref([])
 const awards = ref([])
 const notifications = ref([])
 
-// Grid cards layout - mimicking the MTA 6x4 grid
+// Grid cards layout - mimicking the MTA 6x4 grid with images
 const gridCards = computed(() => [
   {
     id: 'character',
@@ -145,6 +145,7 @@ const gridCards = computed(() => [
     topLabel1: 'Prémium',
     topLabel2: 'shop',
     bgClass: 'bg-blue-accent',
+    bgImage: './img/pp_bcg.png',
     bottomInfo: true,
     bottomLabel: 'Egyenleg:',
     bottomValue: formatNumber(playerData.value.premiumBalance || 0) + ' PP',
@@ -155,6 +156,7 @@ const gridCards = computed(() => [
     topLabel1: 'Beállítások',
     topLabel2: '',
     bgClass: 'bg-dark-card',
+    bgImage: './img/settings_bcg.png',
   },
   {
     id: 'news',
@@ -162,6 +164,7 @@ const gridCards = computed(() => [
     topLabel1: 'Hírek',
     topLabel2: '',
     bgClass: 'bg-news',
+    bgImage: './img/def.png',
     bottomInfo: true,
     bottomLabel: news.value.title || '',
     bottomValue: news.value.date || '',
@@ -172,6 +175,7 @@ const gridCards = computed(() => [
     topLabel1: 'Frakciók',
     topLabel2: '',
     bgClass: 'bg-dark-card',
+    bgImage: './img/groups_bcg.png',
   },
   {
     id: 'interiors',
@@ -179,6 +183,7 @@ const gridCards = computed(() => [
     topLabel1: 'Interiorok',
     topLabel2: '',
     bgClass: 'bg-interior',
+    bgImage: './img/inti/interior_render1.png',
     bottomInfo: true,
     bottomLabel: 'Slotok:',
     bottomValue: interiorLimit.value.toString(),
@@ -189,6 +194,7 @@ const gridCards = computed(() => [
     topLabel1: 'Járművek:',
     topLabel2: (vehicles.value.length || 0).toString(),
     bgClass: 'bg-vehicle',
+    bgImage: './img/fado2.png',
     bottomInfo: true,
     bottomLabel: 'Slotok:',
     bottomValue: vehicleLimit.value.toString(),
@@ -199,6 +205,7 @@ const gridCards = computed(() => [
     topLabel1: 'Report',
     topLabel2: '/ adminisztrátorok',
     bgClass: 'bg-dark-card',
+    bgImage: './img/admins_bcg.png',
     bottomInfo: true,
     bottomLabel: 'Online:',
     bottomValue: (admins.value.length || 0).toString(),
@@ -209,6 +216,7 @@ const gridCards = computed(() => [
     topLabel1: 'Háziállatok:',
     topLabel2: (animals.value.length || 0).toString(),
     bgClass: 'bg-pets',
+    bgImage: './img/pets_bcg.png',
   },
   {
     id: 'invite',

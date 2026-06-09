@@ -3,6 +3,7 @@
     <div class="split-layout">
       <div class="list-side">
         <div v-for="(a,i) in animals" :key="a.animalId" :class="['item-row',{selected:sel===i}]" @click="sel=i">
+          <img :src="getAnimalImg(a.type)" class="animal-thumb" />
           <div class="row-left">
             <span class="row-name">{{ a.name }}</span>
             <span class="row-sub">{{ a.type }} - #{{ a.animalId }}</span>
@@ -15,7 +16,10 @@
       </div>
       <div class="detail-side" v-if="selected">
         <div class="card">
-          <h3 class="card-title">{{ selected.name }}</h3>
+          <div class="animal-detail-header">
+            <img :src="getAnimalImg(selected.type)" class="animal-detail-img" />
+            <h3 class="card-title">{{ selected.name }}</h3>
+          </div>
           <div class="stat-row"><span class="stat-label">ID:</span><span class="stat-value">{{ selected.animalId }}</span></div>
           <div class="stat-row"><span class="stat-label">Fajta:</span><span class="stat-value">{{ selected.type }}</span></div>
           <!-- Health bar -->
@@ -68,6 +72,10 @@ const buyType=ref('Husky');const buyName=ref('');const newName=ref('')
 const types=[{name:'Husky',price:9000},{name:'Rottweiler',price:6000},{name:'Doberman',price:8000},{name:'Bull Terrier',price:9000},{name:'Boxer',price:7000},{name:'Francia Bulldog',price:10000}]
 const selected=computed(()=>props.animals[sel.value]||null)
 function barColor(v){return v<=25?'c-red':v<=75?'c-yellow':'c-green'}
+function getAnimalImg(type){
+  const map={'Husky':'husky','Rottweiler':'rottweiler','Doberman':'doberman','Bull Terrier':'bullterrier','Boxer':'boxer','Francia Bulldog':'franciabulldog'}
+  return `./img/dogs/${map[type]||'husky'}.png`
+}
 function post(e,d){fetch(`https://${window.GetParentResourceName?window.GetParentResourceName():'realrpg-dashboard'}/${e}`,{method:'POST',body:JSON.stringify(d)})}
 function doBuy(){post('buyAnimal',{animalType:buyType.value,name:buyName.value});showBuy.value=false}
 function doRename(){if(selected.value)post('renameAnimal',{animalId:selected.value.animalId,newName:newName.value});showRename.value=false}
@@ -76,11 +84,14 @@ function doRename(){if(selected.value)post('renameAnimal',{animalId:selected.val
 .split-layout{display:grid;grid-template-columns:1fr 1.6fr;gap:12px;min-height:300px}
 .list-side{display:flex;flex-direction:column;gap:4px;max-height:55vh;overflow-y:auto}
 .row-left{display:flex;flex-direction:column}
+.animal-thumb{width:36px;height:36px;border-radius:4px;object-fit:cover;margin-right:10px;background:var(--sightgrey3)}
 .row-name{font-weight:700;font-size:13px}
 .row-sub{font-size:11px;color:var(--sightgreen);opacity:.8}
 .buy-row{border:1px dashed var(--sightblue);justify-content:center}
 .buy-label{color:var(--sightblue);font-weight:700;font-size:13px}
 .list-footer{text-align:center;padding:8px;color:var(--text-muted);font-size:11px;background:var(--sightgrey3);border-radius:3px;margin-top:4px}
+.animal-detail-header{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+.animal-detail-img{width:64px;height:64px;border-radius:6px;object-fit:cover;border:2px solid var(--sightgrey4);background:var(--sightgrey1)}
 .bar-group{margin:10px 0}
 .bar-label{font-size:12px;color:var(--text-secondary);display:flex;justify-content:space-between;margin-bottom:4px}
 .bar-track{height:12px;background:var(--sightgrey3);border-radius:2px;overflow:hidden}
