@@ -1,0 +1,20 @@
+{
+    "generalInformations": {
+        "changelogName": "Tesztnév",
+        "changelogTime": "2025.01.09",
+        "changelogTags": [
+            "c1Király",
+            "c2Király"
+        ]
+    },
+    "changelogDescription": {
+        "rendszernév": [
+            "RENDSZER GROUP [PL VEHICLES]",
+            "Rendszer leírása"
+        ],
+        "rendszernév2": [
+            "RENDSZER GROUP [PL VEHICLES]",
+            "Rendszer leírása"
+        ]
+    }
+}
