@@ -8,24 +8,62 @@
     </div>
     <div class="shop-grid" v-if="items.length">
       <div v-for="(item,i) in items" :key="i" class="shop-card">
-        <div class="item-icon">{{ item.item==='money'?'$':'🔫' }}</div>
-        <div class="item-name">{{ item.item }}</div>
+        <div class="item-icon">{{ item.item==='money'?'💵':'🔫' }}</div>
+        <div class="item-name">{{ item.item==='money' ? fmt(item.amount||0)+' $' : item.item }}</div>
         <div class="item-price-tag"><span class="price-num">{{ fmt(item.price) }}</span> PP</div>
-        <button :class="['btn',item.price<=balance?'btn-blue':'btn-disabled btn-red']" :disabled="item.price>balance" @click="buy(i)">
+        <button :class="['btn',item.price<=balance?'btn-blue':'btn-disabled btn-red']" :disabled="item.price>balance" @click="openBuyModal(i)">
           {{ item.price<=balance?'VÁSÁRLÁS':'Nincs elég PP' }}
         </button>
       </div>
     </div>
-    <div v-else class="empty-state">Nincs elem.</div>
+    <div v-else class="empty-state">Nincs elem ebben a kategóriában.</div>
+
+    <!-- Buy confirmation modal -->
+    <div v-if="showBuyModal" class="modal-overlay" @click.self="showBuyModal=false">
+      <div class="modal card">
+        <h3 class="card-title">Vásárlás megerősítése</h3>
+        <p class="modal-item-name">{{ buyingItem?.item==='money' ? fmt(buyingItem?.amount||0)+' $' : buyingItem?.item }}</p>
+        <div class="amount-row">
+          <label class="amount-label">Mennyiség:</label>
+          <input v-model.number="buyAmount" class="input-field amount-input" type="number" min="1" max="99" />
+        </div>
+        <p class="modal-cost">
+          Fizetendő: <strong class="cost-val">{{ fmt((buyingItem?.price||0) * (buyAmount||1)) }} PP</strong>
+        </p>
+        <p v-if="(buyingItem?.price||0)*(buyAmount||1) > balance" class="modal-error">Nincs elég PrémiumPontod!</p>
+        <div class="btn-row">
+          <button class="btn btn-green" :disabled="(buyingItem?.price||0)*(buyAmount||1) > balance" @click="confirmBuy">Vásárlás</button>
+          <button class="btn btn-red" @click="showBuyModal=false">Mégsem</button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 <script setup>
 import { ref, computed } from 'vue'
 const props = defineProps({shop:{type:Array,default:()=>[]},balance:{type:Number,default:0}})
-const tab=ref(0)
-const items=computed(()=>(props.shop[tab.value]?.items)||[])
+const tab = ref(0)
+const showBuyModal = ref(false)
+const buyingIndex = ref(0)
+const buyAmount = ref(1)
+const items = computed(()=>(props.shop[tab.value]?.items)||[])
+const buyingItem = computed(()=>items.value[buyingIndex.value]||null)
+
 function fmt(n){return(n||0).toString().replace(/\B(?=(\d{3})+(?!\d))/g,'.')}
-function buy(i){fetch(`https://${window.GetParentResourceName?window.GetParentResourceName():'realrpg-dashboard'}/buyPremiumItem`,{method:'POST',body:JSON.stringify({menuIndex:tab.value+1,itemIndex:i+1,amount:1})})}
+function post(e,d){fetch(`https://${window.GetParentResourceName?window.GetParentResourceName():'realrpg-dashboard'}/${e}`,{method:'POST',body:JSON.stringify(d)})}
+
+function openBuyModal(i){
+  buyingIndex.value = i
+  buyAmount.value = 1
+  showBuyModal.value = true
+}
+
+function confirmBuy(){
+  if(!buyingItem.value) return
+  if((buyingItem.value.price||0)*(buyAmount.value||1) > props.balance) return
+  post('buyPremiumItem',{menuIndex:tab.value+1, itemIndex:buyingIndex.value+1, amount:buyAmount.value||1})
+  showBuyModal.value = false
+}
 </script>
 <style scoped>
 .shop-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px}
@@ -42,4 +80,12 @@ function buy(i){fetch(`https://${window.GetParentResourceName?window.GetParentRe
 .item-name{font-size:12px;font-weight:700;text-transform:uppercase;color:var(--text-primary)}
 .item-price-tag{background:var(--sightgreen);color:#000;padding:2px 8px;border-radius:2px;font-size:12px;font-weight:700}
 .price-num{font-size:13px}
+.modal-item-name{text-align:center;font-size:16px;font-weight:700;text-transform:uppercase;margin-bottom:12px;color:var(--sightblue)}
+.amount-row{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.amount-label{color:var(--text-secondary);font-size:13px;white-space:nowrap}
+.amount-input{width:80px}
+.modal-cost{font-size:13px;color:var(--text-secondary);margin-bottom:4px}
+.cost-val{color:var(--sightblue)}
+.modal-error{color:var(--sightred);font-size:12px;font-weight:700;margin-bottom:8px}
+.btn-row{display:flex;gap:8px;margin-top:12px}
 </style>
