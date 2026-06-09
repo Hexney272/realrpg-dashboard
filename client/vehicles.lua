@@ -1,0 +1,1 @@
+-- Client-side vehicle management for dashboard

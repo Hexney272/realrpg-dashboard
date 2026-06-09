@@ -1,0 +1,1 @@
+-- Client-side interiors management for dashboard

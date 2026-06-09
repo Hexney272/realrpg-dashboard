@@ -1,0 +1,1 @@
+-- Client-side animals management for dashboard

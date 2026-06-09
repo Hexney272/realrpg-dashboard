@@ -1,0 +1,1 @@
+-- Client-side news/changelog for dashboard
