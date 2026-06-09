@@ -108,6 +108,15 @@ AddEventHandler('dashboard:receiveSettings', function(settings)
     })
 end)
 
+-- Receive keybinds
+RegisterNetEvent('dashboard:receiveKeybinds')
+AddEventHandler('dashboard:receiveKeybinds', function(keybinds)
+    SendNUIMessage({
+        action = 'updateKeybinds',
+        keybinds = keybinds
+    })
+end)
+
 -- Receive premium shop data
 RegisterNetEvent('dashboard:receivePremiumShop')
 AddEventHandler('dashboard:receivePremiumShop', function(shopData)

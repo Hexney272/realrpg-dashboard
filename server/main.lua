@@ -22,6 +22,45 @@ AddEventHandler('dashboard:requestData', function()
     }
 
     TriggerClientEvent('dashboard:receiveData', src, data)
+
+    -- Also send premium shop config, settings, and news
+    TriggerClientEvent('dashboard:receivePremiumShop', src, Config.PremiumShop)
+    TriggerClientEvent('dashboard:receiveNews', src, Config.LatestNews)
+
+    -- Send player settings from DB
+    local charId = GetPlayerCharacterId(src)
+    local settingsJson = nil
+    if charId then
+        settingsJson = MySQL.Sync.fetchScalar('SELECT settings FROM characters WHERE characterId = ?', { charId })
+    end
+    local playerSettings = {}
+    if settingsJson and settingsJson ~= '' then
+        playerSettings = json.decode(settingsJson) or {}
+    end
+    -- Merge with defaults
+    playerSettings.walkingStyle = playerSettings.walkingStyle or 1
+    playerSettings.streamerMode = playerSettings.streamerMode or false
+    playerSettings.hudVisible = playerSettings.hudVisible ~= false
+    playerSettings.nametagsVisible = playerSettings.nametagsVisible ~= false
+    playerSettings.voiceVolume = playerSettings.voiceVolume or 50
+    playerSettings.farClip = playerSettings.farClip or 3000
+    playerSettings.fogDistance = playerSettings.fogDistance or 2000
+    playerSettings.blips3d = playerSettings.blips3d ~= false
+    playerSettings.platesVisible = playerSettings.platesVisible ~= false
+    playerSettings.speedoUnit = playerSettings.speedoUnit or 'KM/H'
+    playerSettings.gpsSoundPack = playerSettings.gpsSoundPack or 'Női'
+    playerSettings.crosshairType = playerSettings.crosshairType or 1
+    playerSettings.crosshairColor = playerSettings.crosshairColor or '#ffffff'
+    playerSettings.infoboxChat = playerSettings.infoboxChat or false
+    playerSettings.infoboxSound = playerSettings.infoboxSound ~= false
+    playerSettings.kickMessages = playerSettings.kickMessages or false
+    playerSettings.groupMessages = playerSettings.groupMessages ~= false
+    playerSettings.oocTimestamps = playerSettings.oocTimestamps or false
+
+    TriggerClientEvent('dashboard:receiveSettings', src, playerSettings)
+
+    -- Send keybind defaults
+    TriggerClientEvent('dashboard:receiveKeybinds', src, Config.DefaultBinds)
 end)
 
 -- Request news

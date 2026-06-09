@@ -70,7 +70,7 @@
             <InteriorsPanel v-if="expandedCard.id === 'interiors'" :interiors="interiors" :limit="interiorLimit" />
             <AnimalsPanel v-if="expandedCard.id === 'animals'" :animals="animals" />
             <GroupsPanel v-if="expandedCard.id === 'groups'" :groups="groups" />
-            <SettingsPanel v-if="expandedCard.id === 'settings'" :settings="settings" />
+            <SettingsPanel v-if="expandedCard.id === 'settings'" :settings="settings" :keybinds="keybinds" />
             <PremiumShopPanel v-if="expandedCard.id === 'shop'" :shop="premiumShop" :balance="playerData.premiumBalance || 0" />
             <NewsPanel v-if="expandedCard.id === 'news'" :news="news" />
             <AdminPanel v-if="expandedCard.id === 'admins'" :admins="admins" />
@@ -125,6 +125,7 @@ const admins = ref([])
 const inviteCode = ref('')
 const invitedPlayers = ref([])
 const awards = ref([])
+const keybinds = ref([])
 const notifications = ref([])
 
 // Grid cards layout - mimicking the MTA 6x4 grid with images
@@ -321,6 +322,9 @@ function handleMessage(event) {
       break
     case 'updateAdmins':
       admins.value = data.admins || []
+      break
+    case 'updateKeybinds':
+      keybinds.value = data.keybinds || []
       break
     case 'updateInviteData':
       inviteCode.value = data.inviteCode || ''
