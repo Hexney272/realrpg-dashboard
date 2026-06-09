@@ -1,71 +1,83 @@
 <template>
   <div id="dashboard-app" v-show="isOpen" @keydown.escape="closeDashboard">
     <div class="dashboard-overlay" @click="closeDashboard"></div>
-    <div class="dashboard-container">
-      <!-- Sidebar -->
-      <aside class="sidebar">
-        <div class="sidebar-header">
-          <h1 class="logo">RealRPG</h1>
-          <span class="subtitle">Dashboard</span>
+
+    <!-- Main Dashboard Grid -->
+    <div class="dashboard-wrapper" :class="{ 'has-expanded': expandedCard !== null }">
+      <!-- Top bar with player info -->
+      <div class="top-bar" v-show="expandedCard === null">
+        <div class="top-left">
+          <span class="server-name">RealRPG</span>
+          <span class="divider">|</span>
+          <span class="player-name">{{ playerData.name || 'Betöltés...' }}</span>
         </div>
-        <nav class="sidebar-nav">
-          <button
-            v-for="tab in tabs"
-            :key="tab.id"
-            :class="['nav-btn', { active: activeTab === tab.id }]"
-            @click="activeTab = tab.id"
-          >
-            <i :class="tab.icon"></i>
-            <span>{{ tab.label }}</span>
-          </button>
-        </nav>
-        <div class="sidebar-footer">
-          <div class="pp-balance">
-            <span class="pp-label">Premium:</span>
-            <span class="pp-value">{{ formatNumber(playerData.premiumBalance || 0) }} PP</span>
+        <div class="top-right">
+          <span class="pp-badge">{{ formatNumber(playerData.premiumBalance || 0) }} PP</span>
+          <button class="close-x" @click="closeDashboard">&times;</button>
+        </div>
+      </div>
+
+      <!-- Grid Layout (6 columns x 4 rows concept) -->
+      <transition-group name="grid-fade" tag="div" class="dashboard-grid" v-show="expandedCard === null">
+        <div
+          v-for="card in gridCards"
+          :key="card.id"
+          :class="['grid-card', `span-${card.colSpan}x${card.rowSpan}`, card.bgClass || '']"
+          :style="cardStyle(card)"
+          @click="openCard(card)"
+          @mouseenter="hoverCard = card.id"
+          @mouseleave="hoverCard = null"
+        >
+          <!-- Card Background Image -->
+          <div v-if="card.bgImage" class="card-bg" :style="{ backgroundImage: `url(${card.bgImage})` }"></div>
+
+          <!-- Card Overlay -->
+          <div class="card-overlay" :class="{ hovered: hoverCard === card.id }">
+            <!-- Top Labels -->
+            <div class="card-top-labels">
+              <span class="label-bold">{{ card.topLabel1 }}</span>
+              <span class="label-light" v-if="card.topLabel2">{{ card.topLabel2 }}</span>
+            </div>
+
+            <!-- Bottom Info (drawn by drawFunction equivalent) -->
+            <div class="card-bottom-info" v-if="card.bottomInfo">
+              <span class="bottom-label">{{ card.bottomLabel }}</span>
+              <span class="bottom-value">{{ card.bottomValue }}</span>
+            </div>
+
+            <!-- Corner background decoration -->
+            <div v-if="card.cornerBg" class="card-corner-bg"></div>
+          </div>
+
+          <!-- Hover shine effect -->
+          <div class="card-shine" :class="{ active: hoverCard === card.id }"></div>
+        </div>
+      </transition-group>
+
+      <!-- Expanded Card (fullscreen panel) -->
+      <transition name="expand">
+        <div v-if="expandedCard" class="expanded-panel">
+          <div class="expanded-header">
+            <button class="back-btn" @click="closeExpanded">
+              <span class="back-arrow">&larr;</span>
+              <span>Vissza</span>
+            </button>
+            <h2 class="expanded-title">{{ expandedCard.topLabel1 }}{{ expandedCard.topLabel2 ? ' ' + expandedCard.topLabel2 : '' }}</h2>
+          </div>
+          <div class="expanded-content">
+            <CharacterPanel v-if="expandedCard.id === 'character'" :data="playerData" />
+            <VehiclesPanel v-if="expandedCard.id === 'vehicles'" :vehicles="vehicles" :limit="vehicleLimit" />
+            <InteriorsPanel v-if="expandedCard.id === 'interiors'" :interiors="interiors" :limit="interiorLimit" />
+            <AnimalsPanel v-if="expandedCard.id === 'animals'" :animals="animals" />
+            <GroupsPanel v-if="expandedCard.id === 'groups'" :groups="groups" />
+            <SettingsPanel v-if="expandedCard.id === 'settings'" :settings="settings" />
+            <PremiumShopPanel v-if="expandedCard.id === 'shop'" :shop="premiumShop" :balance="playerData.premiumBalance || 0" />
+            <NewsPanel v-if="expandedCard.id === 'news'" :news="news" />
+            <AdminPanel v-if="expandedCard.id === 'admins'" :admins="admins" />
+            <InvitePanel v-if="expandedCard.id === 'invite'" :inviteCode="inviteCode" :invitedPlayers="invitedPlayers" :awards="awards" />
           </div>
         </div>
-      </aside>
-
-      <!-- Main Content -->
-      <main class="main-content">
-        <header class="content-header">
-          <h2>{{ currentTabLabel }}</h2>
-          <button class="close-btn" @click="closeDashboard">&times;</button>
-        </header>
-
-        <div class="content-body">
-          <!-- Character Info -->
-          <CharacterPanel v-if="activeTab === 'character'" :data="playerData" />
-
-          <!-- Vehicles -->
-          <VehiclesPanel v-if="activeTab === 'vehicles'" :vehicles="vehicles" :limit="vehicleLimit" />
-
-          <!-- Interiors -->
-          <InteriorsPanel v-if="activeTab === 'interiors'" :interiors="interiors" :limit="interiorLimit" />
-
-          <!-- Animals -->
-          <AnimalsPanel v-if="activeTab === 'animals'" :animals="animals" />
-
-          <!-- Groups -->
-          <GroupsPanel v-if="activeTab === 'groups'" :groups="groups" />
-
-          <!-- Settings -->
-          <SettingsPanel v-if="activeTab === 'settings'" :settings="settings" />
-
-          <!-- Premium Shop -->
-          <PremiumShopPanel v-if="activeTab === 'shop'" :shop="premiumShop" :balance="playerData.premiumBalance || 0" />
-
-          <!-- News -->
-          <NewsPanel v-if="activeTab === 'news'" :news="news" />
-
-          <!-- Admins / Report -->
-          <AdminPanel v-if="activeTab === 'admins'" :admins="admins" />
-
-          <!-- Invite System -->
-          <InvitePanel v-if="activeTab === 'invite'" :inviteCode="inviteCode" :invitedPlayers="invitedPlayers" :awards="awards" />
-        </div>
-      </main>
+      </transition>
     </div>
 
     <!-- Notifications -->
@@ -97,7 +109,8 @@ import AdminPanel from './components/AdminPanel.vue'
 import InvitePanel from './components/InvitePanel.vue'
 
 const isOpen = ref(false)
-const activeTab = ref('character')
+const expandedCard = ref(null)
+const hoverCard = ref(null)
 const playerData = ref({})
 const vehicles = ref([])
 const vehicleLimit = ref(5)
@@ -114,23 +127,125 @@ const invitedPlayers = ref([])
 const awards = ref([])
 const notifications = ref([])
 
-const tabs = [
-  { id: 'character', label: 'Karakter', icon: 'fas fa-user' },
-  { id: 'vehicles', label: 'Jarmuvek', icon: 'fas fa-car' },
-  { id: 'interiors', label: 'Interiorok', icon: 'fas fa-home' },
-  { id: 'animals', label: 'Haziallatok', icon: 'fas fa-paw' },
-  { id: 'groups', label: 'Frakciok', icon: 'fas fa-users' },
-  { id: 'shop', label: 'Premium Shop', icon: 'fas fa-store' },
-  { id: 'settings', label: 'Beallitasok', icon: 'fas fa-cog' },
-  { id: 'news', label: 'Hirek', icon: 'fas fa-newspaper' },
-  { id: 'admins', label: 'Adminok / Report', icon: 'fas fa-shield-alt' },
-  { id: 'invite', label: 'Meghivo', icon: 'fas fa-envelope' },
-]
+// Grid cards layout - mimicking the MTA 6x4 grid
+const gridCards = computed(() => [
+  {
+    id: 'character',
+    colSpan: 2, rowSpan: 1,
+    topLabel1: 'Üdvözlünk',
+    topLabel2: playerData.value.name || '',
+    bgClass: 'bg-green-gradient',
+    bottomInfo: true,
+    bottomLabel: 'Szint:',
+    bottomValue: 'LVL ' + (playerData.value.level || 1),
+  },
+  {
+    id: 'shop',
+    colSpan: 2, rowSpan: 1,
+    topLabel1: 'Prémium',
+    topLabel2: 'shop',
+    bgClass: 'bg-blue-accent',
+    bottomInfo: true,
+    bottomLabel: 'Egyenleg:',
+    bottomValue: formatNumber(playerData.value.premiumBalance || 0) + ' PP',
+  },
+  {
+    id: 'settings',
+    colSpan: 1, rowSpan: 1,
+    topLabel1: 'Beállítások',
+    topLabel2: '',
+    bgClass: 'bg-dark-card',
+  },
+  {
+    id: 'news',
+    colSpan: 2, rowSpan: 1,
+    topLabel1: 'Hírek',
+    topLabel2: '',
+    bgClass: 'bg-news',
+    bottomInfo: true,
+    bottomLabel: news.value.title || '',
+    bottomValue: news.value.date || '',
+  },
+  {
+    id: 'groups',
+    colSpan: 1, rowSpan: 1,
+    topLabel1: 'Frakciók',
+    topLabel2: '',
+    bgClass: 'bg-dark-card',
+  },
+  {
+    id: 'interiors',
+    colSpan: 2, rowSpan: 2,
+    topLabel1: 'Interiorok',
+    topLabel2: '',
+    bgClass: 'bg-interior',
+    bottomInfo: true,
+    bottomLabel: 'Slotok:',
+    bottomValue: interiorLimit.value.toString(),
+  },
+  {
+    id: 'vehicles',
+    colSpan: 2, rowSpan: 2,
+    topLabel1: 'Járművek:',
+    topLabel2: (vehicles.value.length || 0).toString(),
+    bgClass: 'bg-vehicle',
+    bottomInfo: true,
+    bottomLabel: 'Slotok:',
+    bottomValue: vehicleLimit.value.toString(),
+  },
+  {
+    id: 'admins',
+    colSpan: 2, rowSpan: 1,
+    topLabel1: 'Report',
+    topLabel2: '/ adminisztrátorok',
+    bgClass: 'bg-dark-card',
+    bottomInfo: true,
+    bottomLabel: 'Online:',
+    bottomValue: (admins.value.length || 0).toString(),
+  },
+  {
+    id: 'animals',
+    colSpan: 2, rowSpan: 1,
+    topLabel1: 'Háziállatok:',
+    topLabel2: (animals.value.length || 0).toString(),
+    bgClass: 'bg-pets',
+  },
+  {
+    id: 'invite',
+    colSpan: 2, rowSpan: 1,
+    topLabel1: 'Meghívó',
+    topLabel2: 'rendszer',
+    bgClass: 'bg-invite',
+    bottomInfo: true,
+    bottomLabel: 'Kódod:',
+    bottomValue: inviteCode.value || '...',
+  },
+])
 
-const currentTabLabel = computed(() => {
-  const tab = tabs.find(t => t.id === activeTab.value)
-  return tab ? tab.label : ''
-})
+function cardStyle(card) {
+  return {
+    gridColumn: `span ${card.colSpan}`,
+    gridRow: `span ${card.rowSpan}`,
+  }
+}
+
+function openCard(card) {
+  // Request data before expanding
+  const resource = GetParentResourceName()
+  if (card.id === 'vehicles') fetch(`https://${resource}/requestVehicles`, { method: 'POST', body: '{}' })
+  if (card.id === 'animals') fetch(`https://${resource}/requestAnimals`, { method: 'POST', body: '{}' })
+  if (card.id === 'interiors') fetch(`https://${resource}/requestInteriors`, { method: 'POST', body: '{}' })
+  if (card.id === 'groups') fetch(`https://${resource}/requestGroups`, { method: 'POST', body: '{}' })
+  if (card.id === 'admins') fetch(`https://${resource}/requestAdminList`, { method: 'POST', body: '{}' })
+  if (card.id === 'invite') fetch(`https://${resource}/requestInviteData`, { method: 'POST', body: '{}' })
+  if (card.id === 'news') fetch(`https://${resource}/requestNews`, { method: 'POST', body: '{}' })
+
+  expandedCard.value = card
+}
+
+function closeExpanded() {
+  expandedCard.value = null
+}
 
 function formatNumber(num) {
   if (!num) return '0'
@@ -139,6 +254,7 @@ function formatNumber(num) {
 
 function closeDashboard() {
   isOpen.value = false
+  expandedCard.value = null
   fetch(`https://${GetParentResourceName()}/closeDashboard`, {
     method: 'POST',
     body: JSON.stringify({})
@@ -153,7 +269,6 @@ function addNotification(type, message) {
   }, 4000)
 }
 
-// NUI message handler
 function handleMessage(event) {
   const data = event.data
   if (!data || !data.action) return
@@ -161,15 +276,17 @@ function handleMessage(event) {
   switch (data.action) {
     case 'open':
       isOpen.value = true
+      expandedCard.value = null
       break
     case 'close':
       isOpen.value = false
+      expandedCard.value = null
       break
     case 'updatePlayerData':
       playerData.value = data.data || {}
       break
     case 'updatePremiumBalance':
-      playerData.value.premiumBalance = data.balance
+      playerData.value = { ...playerData.value, premiumBalance: data.balance }
       break
     case 'updateVehicles':
       vehicles.value = data.vehicles || []
@@ -208,25 +325,14 @@ function handleMessage(event) {
   }
 }
 
-// Helper for NUI callbacks
 function GetParentResourceName() {
   return window.GetParentResourceName ? window.GetParentResourceName() : 'realrpg-dashboard'
 }
 
-// Expose to child components
-window.__dashboard = {
-  formatNumber,
-  addNotification,
-  GetParentResourceName: GetParentResourceName
-}
+window.__dashboard = { formatNumber, addNotification, GetParentResourceName }
 
-onMounted(() => {
-  window.addEventListener('message', handleMessage)
-})
-
-onUnmounted(() => {
-  window.removeEventListener('message', handleMessage)
-})
+onMounted(() => { window.addEventListener('message', handleMessage) })
+onUnmounted(() => { window.removeEventListener('message', handleMessage) })
 </script>
 
 <style>

@@ -1,79 +1,57 @@
 <template>
   <div class="admin-panel">
     <div class="grid-2">
-      <!-- Report Section -->
+      <!-- Report -->
       <div class="card">
         <h3 class="card-title">Report rendszer</h3>
-        <p class="desc">Ha barmiyen problemaba utkoznel, a Report rendszeren keresztul tudsz segtseget kerni.</p>
-        <input v-model="reportTitle" class="input-field" placeholder="Bejelentes cime" style="margin-top:10px" />
-        <select v-model="reportCategory" class="input-field" style="margin-top:8px">
-          <option value="">Valassz kategoriat...</option>
+        <p class="hint">Ha bármilyen problémába ütköznél, a Report rendszeren keresztül tudsz segítséget kérni.</p>
+        <input v-model="title" class="input-field" placeholder="Bejelentés rövid címe" style="margin-top:10px"/>
+        <select v-model="cat" class="input-field" style="margin-top:8px">
+          <option value="">Válassz kategóriát...</option>
           <option value="bug">Bug</option>
-          <option value="player">Jatekos bejelentes</option>
-          <option value="question">Kerdes</option>
-          <option value="other">Egyeb</option>
+          <option value="player">Játékos bejelentés</option>
+          <option value="question">Kérdés</option>
+          <option value="other">Egyéb</option>
         </select>
-        <textarea v-model="reportDesc" class="input-field" placeholder="Leiras..." rows="4" style="margin-top:8px; resize: vertical"></textarea>
-        <button class="btn btn-green" style="margin-top:10px" @click="sendReport">Report elkuldese</button>
+        <textarea v-model="desc" class="input-field" placeholder="Hosszabb leírás..." rows="5" style="margin-top:8px;resize:vertical"></textarea>
+        <div class="btn-row">
+          <button class="btn btn-green" @click="send">Elküldés</button>
+        </div>
       </div>
-
-      <!-- Admin List -->
+      <!-- Admin list -->
       <div class="card">
-        <h3 class="card-title">Online adminisztratorok ({{ admins.length }})</h3>
-        <div class="admin-list">
-          <div v-for="admin in admins" :key="admin.id" class="admin-row">
-            <span class="admin-name">{{ admin.name }}</span>
-            <span :class="['admin-level', admin.onDuty ? 'on-duty' : 'off-duty']">
-              {{ getAdminTitle(admin.level) }}
-              <span v-if="admin.onDuty" class="duty-badge">DUTY</span>
-            </span>
+        <h3 class="card-title">Online adminisztrátorok ({{ admins.length }})</h3>
+        <div class="admin-table">
+          <div class="table-head"><span>Név</span><span>ID</span><span>Adminszint</span></div>
+          <div v-for="a in admins" :key="a.id" :class="['table-row',{duty:a.onDuty}]">
+            <span class="a-name">{{ a.name }}</span>
+            <span class="a-id">{{ a.id }}</span>
+            <span :class="['a-level',levelColor(a.level)]">{{ levelTitle(a.level) }}</span>
           </div>
-          <div v-if="admins.length === 0" class="empty-state">Nincs online adminisztrator.</div>
+          <div v-if="!admins.length" class="empty-state">Nincs online admin.</div>
         </div>
       </div>
     </div>
   </div>
 </template>
-
 <script setup>
 import { ref } from 'vue'
-defineProps({ admins: { type: Array, default: () => [] } })
-
-const reportTitle = ref('')
-const reportCategory = ref('')
-const reportDesc = ref('')
-
-function getAdminTitle(level) {
-  if (level >= 11) return 'Tulajdonos'
-  if (level >= 10) return 'Fejleszto'
-  if (level >= 9) return 'SysEngineer'
-  if (level >= 8) return 'Manager'
-  if (level >= 7) return 'SzuperAdmin'
-  if (level >= 6) return 'FoAdmin'
-  return 'Admin ' + level
-}
-
-function sendReport() {
-  if (!reportTitle.value || !reportCategory.value || !reportDesc.value) return
-  fetch(`https://${getResource()}/createReport`, {
-    method: 'POST',
-    body: JSON.stringify({ title: reportTitle.value, category: reportCategory.value, description: reportDesc.value })
-  })
-  reportTitle.value = ''
-  reportCategory.value = ''
-  reportDesc.value = ''
-}
-function getResource() { return window.GetParentResourceName ? window.GetParentResourceName() : 'realrpg-dashboard' }
+defineProps({admins:{type:Array,default:()=>[]}})
+const title=ref('');const cat=ref('');const desc=ref('')
+function post(e,d){fetch(`https://${window.GetParentResourceName?window.GetParentResourceName():'realrpg-dashboard'}/${e}`,{method:'POST',body:JSON.stringify(d)})}
+function send(){if(title.value&&cat.value&&desc.value){post('createReport',{title:title.value,category:cat.value,description:desc.value});title.value='';cat.value='';desc.value=''}}
+function levelTitle(l){if(l>=11)return'Tulajdonos';if(l>=10)return'Fejlesztő';if(l>=9)return'SysEngineer';if(l>=8)return'Manager';if(l>=7)return'SzuperAdmin';if(l>=6)return'FőAdmin';return'Admin '+l}
+function levelColor(l){if(l>=10)return'lv-red';if(l>=8)return'lv-blue';if(l>=6)return'lv-yellow';return'lv-green'}
 </script>
-
 <style scoped>
-.desc { color: var(--text-secondary); font-size: 12px; line-height: 1.5; }
-.admin-list { display: flex; flex-direction: column; gap: 6px; max-height: 400px; overflow-y: auto; }
-.admin-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: var(--bg-darker); border-radius: var(--radius-sm); }
-.admin-name { font-size: 13px; font-weight: 500; }
-.admin-level { font-size: 12px; }
-.admin-level.on-duty { color: var(--accent-green); }
-.admin-level.off-duty { color: var(--text-muted); }
-.duty-badge { background: var(--accent-green); color: #000; font-size: 10px; padding: 1px 5px; border-radius: 3px; margin-left: 5px; font-weight: 700; }
-.empty-state { text-align: center; color: var(--text-muted); padding: 20px; }
+.hint{color:var(--text-secondary);font-size:12px;line-height:1.6}
+.btn-row{margin-top:12px}
+.admin-table{display:flex;flex-direction:column;gap:2px;max-height:45vh;overflow-y:auto}
+.table-head{display:grid;grid-template-columns:1fr 50px 1fr;padding:8px 10px;background:var(--sightgrey3);font-size:12px;font-weight:700;border-radius:3px;color:var(--text-secondary)}
+.table-row{display:grid;grid-template-columns:1fr 50px 1fr;padding:8px 10px;font-size:12px;border-bottom:1px solid var(--sightgrey3)}
+.table-row.duty .a-name{color:var(--sightgreen)}
+.a-name{font-weight:600}
+.a-id{color:var(--text-muted);text-align:center}
+.a-level{font-weight:600;text-align:right}
+.lv-red{color:var(--sightred)}.lv-blue{color:var(--sightblue)}.lv-yellow{color:var(--sightyellow)}.lv-green{color:var(--sightgreen)}
 </style>

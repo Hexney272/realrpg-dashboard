@@ -1,93 +1,93 @@
 <template>
   <div class="animals-panel">
-    <div class="vehicles-layout">
-      <div class="vehicle-list">
-        <div v-for="(animal, i) in animals" :key="animal.animalId" :class="['item-row', { selected: selectedIndex === i }]" @click="selectedIndex = i">
-          <div class="veh-info">
-            <span class="veh-name">{{ animal.name }}</span>
-            <span class="veh-plate">{{ animal.type }} - #{{ animal.animalId }}</span>
+    <div class="split-layout">
+      <div class="list-side">
+        <div v-for="(a,i) in animals" :key="a.animalId" :class="['item-row',{selected:sel===i}]" @click="sel=i">
+          <div class="row-left">
+            <span class="row-name">{{ a.name }}</span>
+            <span class="row-sub">{{ a.type }} - #{{ a.animalId }}</span>
           </div>
         </div>
-        <div class="item-row" style="border-color: var(--accent-blue); cursor:pointer" @click="showBuyModal = true">
-          <span style="color: var(--accent-blue); font-weight: 600">+ Haziallat vasarlas</span>
+        <div class="item-row buy-row" @click="showBuy=true">
+          <span class="buy-label">+ Háziállat vásárlás</span>
         </div>
+        <div class="list-footer">Háziállatok: {{ animals.length }}</div>
       </div>
-
-      <div v-if="selected" class="card">
-        <h3 class="card-title">{{ selected.name }}</h3>
-        <div class="stat-row"><span class="stat-label">ID:</span><span class="stat-value">{{ selected.animalId }}</span></div>
-        <div class="stat-row"><span class="stat-label">Fajta:</span><span class="stat-value">{{ selected.type }}</span></div>
-        <div class="stat-row"><span class="stat-label">Eletero:</span><span :class="['stat-value', selected.health <= 25 ? 'red' : '']">{{ Math.floor(selected.health) }}%</span></div>
-        <div class="stat-row"><span class="stat-label">Ehseg:</span><span class="stat-value blue">{{ Math.floor(selected.hunger) }}%</span></div>
-        <div class="stat-row"><span class="stat-label">Szeretet:</span><span class="stat-value yellow">{{ Math.floor(selected.love) }}%</span></div>
-        <div class="vehicle-actions">
-          <button class="btn btn-green" @click="spawnAnimal">Spawn</button>
-          <button class="btn btn-red" @click="despawnAnimal">Despawn</button>
-          <button class="btn btn-blue" @click="showRename = true">Atnevezes</button>
+      <div class="detail-side" v-if="selected">
+        <div class="card">
+          <h3 class="card-title">{{ selected.name }}</h3>
+          <div class="stat-row"><span class="stat-label">ID:</span><span class="stat-value">{{ selected.animalId }}</span></div>
+          <div class="stat-row"><span class="stat-label">Fajta:</span><span class="stat-value">{{ selected.type }}</span></div>
+          <!-- Health bar -->
+          <div class="bar-group">
+            <span class="bar-label">Életerő: <strong :class="barColor(selected.health)">{{ Math.floor(selected.health) }}%</strong></span>
+            <div class="bar-track"><div class="bar-fill green" :style="{width: selected.health+'%'}"></div></div>
+          </div>
+          <div class="bar-group">
+            <span class="bar-label">Éhség: <strong :class="barColor(selected.hunger)">{{ Math.floor(selected.hunger) }}%</strong></span>
+            <div class="bar-track"><div class="bar-fill blue" :style="{width: selected.hunger+'%'}"></div></div>
+          </div>
+          <div class="bar-group">
+            <span class="bar-label">Szeretet: <strong :class="barColor(selected.love)">{{ Math.floor(selected.love) }}%</strong></span>
+            <div class="bar-track"><div class="bar-fill red" :style="{width: selected.love+'%'}"></div></div>
+          </div>
+          <div class="btn-row">
+            <button class="btn btn-green" @click="post('spawnAnimal',{animalId:selected.animalId})">Spawn</button>
+            <button class="btn btn-red" @click="post('despawnAnimal',{animalId:selected.animalId})">Despawn</button>
+            <button class="btn btn-blue" @click="showRename=true">Átnevezés</button>
+          </div>
         </div>
       </div>
     </div>
-
-    <!-- Buy Modal -->
-    <div v-if="showBuyModal" class="modal-overlay" @click.self="showBuyModal = false">
+    <!-- Buy modal -->
+    <div v-if="showBuy" class="modal-overlay" @click.self="showBuy=false">
       <div class="modal card">
-        <h3 class="card-title">Haziallat vasarlas</h3>
+        <h3 class="card-title">Háziállat vásárlás</h3>
         <select v-model="buyType" class="input-field">
-          <option v-for="a in animalTypes" :key="a.name" :value="a.name">{{ a.name }} - {{ a.price }} PP</option>
+          <option v-for="a in types" :key="a.name" :value="a.name">{{ a.name }} - {{ a.price }} PP</option>
         </select>
-        <input v-model="buyName" class="input-field" placeholder="Allat neve" style="margin-top:8px"/>
-        <div style="margin-top: 12px; display: flex; gap: 8px">
-          <button class="btn btn-green" @click="buyAnimal">Vasarlas</button>
-          <button class="btn btn-red" @click="showBuyModal = false">Megse</button>
-        </div>
+        <input v-model="buyName" class="input-field" placeholder="Állat neve" style="margin-top:8px"/>
+        <div class="btn-row"><button class="btn btn-green" @click="doBuy">Vásárlás</button><button class="btn btn-red" @click="showBuy=false">Mégsem</button></div>
       </div>
     </div>
-
-    <!-- Rename Modal -->
-    <div v-if="showRename" class="modal-overlay" @click.self="showRename = false">
+    <!-- Rename modal -->
+    <div v-if="showRename" class="modal-overlay" @click.self="showRename=false">
       <div class="modal card">
-        <h3 class="card-title">Allat atnevezese</h3>
-        <input v-model="newName" class="input-field" placeholder="Uj nev" />
-        <div style="margin-top: 12px; display: flex; gap: 8px">
-          <button class="btn btn-green" @click="renameAnimal">Mentes</button>
-          <button class="btn btn-red" @click="showRename = false">Megse</button>
-        </div>
+        <h3 class="card-title">Átnevezés</h3>
+        <input v-model="newName" class="input-field" placeholder="Új név"/>
+        <div class="btn-row"><button class="btn btn-green" @click="doRename">Mentés</button><button class="btn btn-red" @click="showRename=false">Mégsem</button></div>
       </div>
     </div>
   </div>
 </template>
-
 <script setup>
 import { ref, computed } from 'vue'
-const props = defineProps({ animals: { type: Array, default: () => [] } })
-const selectedIndex = ref(0)
-const showBuyModal = ref(false)
-const showRename = ref(false)
-const buyType = ref('Husky')
-const buyName = ref('')
-const newName = ref('')
-const animalTypes = [
-  { name: 'Husky', price: 9000 }, { name: 'Rottweiler', price: 6000 },
-  { name: 'Doberman', price: 8000 }, { name: 'Bull Terrier', price: 9000 },
-  { name: 'Boxer', price: 7000 }, { name: 'Francia Bulldog', price: 10000 },
-]
-const selected = computed(() => props.animals[selectedIndex.value] || null)
-
-function post(endpoint, data) { fetch(`https://${getResource()}/${endpoint}`, { method: 'POST', body: JSON.stringify(data) }) }
-function getResource() { return window.GetParentResourceName ? window.GetParentResourceName() : 'realrpg-dashboard' }
-function spawnAnimal() { if (selected.value) post('spawnAnimal', { animalId: selected.value.animalId }) }
-function despawnAnimal() { if (selected.value) post('despawnAnimal', { animalId: selected.value.animalId }) }
-function buyAnimal() { post('buyAnimal', { animalType: buyType.value, name: buyName.value }); showBuyModal.value = false }
-function renameAnimal() { if (selected.value) post('renameAnimal', { animalId: selected.value.animalId, newName: newName.value }); showRename.value = false }
+const props = defineProps({animals:{type:Array,default:()=>[]}})
+const sel=ref(0);const showBuy=ref(false);const showRename=ref(false)
+const buyType=ref('Husky');const buyName=ref('');const newName=ref('')
+const types=[{name:'Husky',price:9000},{name:'Rottweiler',price:6000},{name:'Doberman',price:8000},{name:'Bull Terrier',price:9000},{name:'Boxer',price:7000},{name:'Francia Bulldog',price:10000}]
+const selected=computed(()=>props.animals[sel.value]||null)
+function barColor(v){return v<=25?'c-red':v<=75?'c-yellow':'c-green'}
+function post(e,d){fetch(`https://${window.GetParentResourceName?window.GetParentResourceName():'realrpg-dashboard'}/${e}`,{method:'POST',body:JSON.stringify(d)})}
+function doBuy(){post('buyAnimal',{animalType:buyType.value,name:buyName.value});showBuy.value=false}
+function doRename(){if(selected.value)post('renameAnimal',{animalId:selected.value.animalId,newName:newName.value});showRename.value=false}
 </script>
-
 <style scoped>
-.vehicles-layout { display: grid; grid-template-columns: 1fr 1.5fr; gap: 15px; }
-.vehicle-list { max-height: 500px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; }
-.veh-info { display: flex; flex-direction: column; }
-.veh-name { font-weight: 600; font-size: 13px; }
-.veh-plate { font-size: 11px; color: var(--accent-green); }
-.vehicle-actions { display: flex; gap: 8px; margin-top: 15px; flex-wrap: wrap; }
-.modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 100; }
-.modal { width: 350px; }
+.split-layout{display:grid;grid-template-columns:1fr 1.6fr;gap:12px;min-height:300px}
+.list-side{display:flex;flex-direction:column;gap:4px;max-height:55vh;overflow-y:auto}
+.row-left{display:flex;flex-direction:column}
+.row-name{font-weight:700;font-size:13px}
+.row-sub{font-size:11px;color:var(--sightgreen);opacity:.8}
+.buy-row{border:1px dashed var(--sightblue);justify-content:center}
+.buy-label{color:var(--sightblue);font-weight:700;font-size:13px}
+.list-footer{text-align:center;padding:8px;color:var(--text-muted);font-size:11px;background:var(--sightgrey3);border-radius:3px;margin-top:4px}
+.bar-group{margin:10px 0}
+.bar-label{font-size:12px;color:var(--text-secondary);display:flex;justify-content:space-between;margin-bottom:4px}
+.bar-track{height:12px;background:var(--sightgrey3);border-radius:2px;overflow:hidden}
+.bar-fill{height:100%;border-radius:2px;transition:width .4s ease}
+.bar-fill.green{background:var(--sightgreen)}
+.bar-fill.blue{background:var(--sightblue)}
+.bar-fill.red{background:var(--sightred)}
+.c-red{color:var(--sightred)}.c-yellow{color:var(--sightyellow)}.c-green{color:var(--sightgreen)}
+.btn-row{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap}
 </style>

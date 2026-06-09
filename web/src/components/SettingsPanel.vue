@@ -1,93 +1,47 @@
 <template>
   <div class="settings-panel">
     <div class="card">
-      <h3 class="card-title">Karakter es jatekmenet</h3>
-      <div class="setting-item">
-        <span>Streamer mod</span>
-        <label class="toggle">
-          <input type="checkbox" :checked="settings.streamerMode" @change="save('streamerMode', $event.target.checked)" />
-          <span class="toggle-slider"></span>
-        </label>
-      </div>
-      <div class="setting-item">
-        <span>HUD megjelenitese</span>
-        <label class="toggle">
-          <input type="checkbox" :checked="settings.hudVisible" @change="save('hudVisible', $event.target.checked)" />
-          <span class="toggle-slider"></span>
-        </label>
-      </div>
-      <div class="setting-item">
-        <span>Nevek megjelenitese</span>
-        <label class="toggle">
-          <input type="checkbox" :checked="settings.nametagsVisible" @change="save('nametagsVisible', $event.target.checked)" />
-          <span class="toggle-slider"></span>
-        </label>
+      <h3 class="card-title">Megjelenés / Játékmenet</h3>
+      <div class="setting-item"><span>Streamer mód</span><label class="toggle"><input type="checkbox" :checked="settings.streamerMode" @change="save('streamerMode',$event.target.checked)"/><span class="slider"></span></label></div>
+      <div class="setting-item"><span>HUD megjelenítése</span><label class="toggle"><input type="checkbox" :checked="settings.hudVisible" @change="save('hudVisible',$event.target.checked)"/><span class="slider"></span></label></div>
+      <div class="setting-item"><span>Nevek megjelenítése</span><label class="toggle"><input type="checkbox" :checked="settings.nametagsVisible" @change="save('nametagsVisible',$event.target.checked)"/><span class="slider"></span></label></div>
+    </div>
+    <div class="card">
+      <h3 class="card-title">Sétastílus</h3>
+      <div class="style-grid">
+        <button v-for="(s,i) in styles" :key="i" :class="['style-btn',{active:settings.walkingStyle===(i+1)}]" @click="setWalk(i+1)">{{ s }}</button>
       </div>
     </div>
-
     <div class="card">
-      <h3 class="card-title">Setastilus</h3>
-      <div class="walking-styles">
-        <button
-          v-for="(style, i) in walkingStyles"
-          :key="i"
-          :class="['btn', settings.walkingStyle === (i+1) ? 'btn-green' : 'btn-blue']"
-          @click="setWalking(i+1)"
-        >{{ style.label }}</button>
-      </div>
-    </div>
-
-    <div class="card">
-      <h3 class="card-title">Hang</h3>
-      <div class="setting-item">
-        <span>Voice hangsuly</span>
-        <input
-          type="range"
-          min="0"
-          max="100"
-          :value="settings.voiceVolume || 50"
-          @input="save('voiceVolume', parseInt($event.target.value))"
-          class="range-slider"
-        />
+      <h3 class="card-title">Voice hangerő</h3>
+      <div class="slider-row">
+        <input type="range" min="0" max="100" :value="settings.voiceVolume||50" @input="save('voiceVolume',+$event.target.value)" class="range"/>
+        <span class="range-val">{{ settings.voiceVolume||50 }}%</span>
       </div>
     </div>
   </div>
 </template>
-
 <script setup>
-const props = defineProps({
-  settings: { type: Object, default: () => ({}) }
-})
-
-const walkingStyles = [
-  { label: 'Stilus #1' }, { label: 'Stilus #2' }, { label: 'Stilus #3' },
-  { label: 'Stilus #4' }, { label: 'Stilus #5' }, { label: 'Stilus #6' },
-  { label: 'Stilus #7' }, { label: 'Stilus #8' }, { label: 'Stilus #9' },
-  { label: 'Stilus #10' }, { label: 'Stilus #11' }, { label: 'Stilus #12' },
-]
-
-function save(key, value) {
-  fetch(`https://${getResource()}/saveSetting`, { method: 'POST', body: JSON.stringify({ key, value }) })
-}
-
-function setWalking(index) {
-  fetch(`https://${getResource()}/setWalkingStyle`, { method: 'POST', body: JSON.stringify({ index }) })
-  save('walkingStyle', index)
-}
-
-function getResource() { return window.GetParentResourceName ? window.GetParentResourceName() : 'realrpg-dashboard' }
+defineProps({settings:{type:Object,default:()=>({})}})
+const styles=['Stílus #1','Stílus #2','Stílus #3','Stílus #4','Stílus #5','Stílus #6','Stílus #7','Stílus #8','Stílus #9','Stílus #10','Stílus #11','Stílus #12','Stílus #13','Stílus #14','Stílus #15','Stílus #16','Stílus #17']
+function post(e,d){fetch(`https://${window.GetParentResourceName?window.GetParentResourceName():'realrpg-dashboard'}/${e}`,{method:'POST',body:JSON.stringify(d)})}
+function save(k,v){post('saveSetting',{key:k,value:v})}
+function setWalk(i){post('setWalkingStyle',{index:i});save('walkingStyle',i)}
 </script>
-
 <style scoped>
-.setting-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--border-color); }
-.setting-item:last-child { border-bottom: none; }
-.setting-item span { font-size: 13px; color: var(--text-secondary); }
-.toggle { position: relative; width: 44px; height: 24px; display: inline-block; }
-.toggle input { opacity: 0; width: 0; height: 0; }
-.toggle-slider { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: var(--bg-hover); border-radius: 12px; cursor: pointer; transition: 0.3s; }
-.toggle-slider::before { content: ''; position: absolute; width: 18px; height: 18px; left: 3px; bottom: 3px; background: white; border-radius: 50%; transition: 0.3s; }
-.toggle input:checked + .toggle-slider { background: var(--accent-green); }
-.toggle input:checked + .toggle-slider::before { transform: translateX(20px); }
-.walking-styles { display: flex; flex-wrap: wrap; gap: 6px; }
-.range-slider { width: 150px; accent-color: var(--accent-green); }
+.setting-item{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--sightgrey3);font-size:13px;color:var(--text-secondary)}
+.setting-item:last-child{border-bottom:none}
+.toggle{position:relative;width:40px;height:22px;display:inline-block}
+.toggle input{opacity:0;width:0;height:0}
+.slider{position:absolute;top:0;left:0;right:0;bottom:0;background:var(--sightgrey4);border-radius:11px;cursor:pointer;transition:.3s}
+.slider::before{content:'';position:absolute;width:16px;height:16px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.3s}
+.toggle input:checked+.slider{background:var(--sightgreen)}
+.toggle input:checked+.slider::before{transform:translateX(18px)}
+.style-grid{display:flex;flex-wrap:wrap;gap:6px}
+.style-btn{padding:6px 12px;border:1px solid var(--sightgrey4);background:var(--sightgrey2);color:var(--text-secondary);border-radius:3px;font-size:11px;cursor:pointer;transition:all .2s;font-weight:600}
+.style-btn:hover{border-color:var(--sightgreen);color:var(--sightgreen)}
+.style-btn.active{background:var(--sightgreen);color:#000;border-color:var(--sightgreen)}
+.slider-row{display:flex;align-items:center;gap:12px}
+.range{flex:1;accent-color:var(--sightgreen);height:4px}
+.range-val{color:var(--sightgreen);font-weight:700;font-size:14px;min-width:40px}
 </style>

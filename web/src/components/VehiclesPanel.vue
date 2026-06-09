@@ -1,226 +1,85 @@
 <template>
   <div class="vehicles-panel">
-    <div class="panel-header">
-      <div class="slot-info">
-        <span>Jarmuvek: {{ vehicles.length }} / Slotok: {{ limit }}</span>
-      </div>
-      <button class="btn btn-blue" @click="buySlot">Slot vasarlas ({{ slotPrice }} PP)</button>
+    <div class="panel-top">
+      <span class="slot-label">SLOTOK: <strong>{{ limit }}</strong></span>
+      <button class="btn btn-blue" @click="showSlotBuy=true">Slot vásárlás</button>
     </div>
-
-    <div class="vehicles-layout">
-      <!-- Vehicle List -->
-      <div class="vehicle-list">
-        <div
-          v-for="(veh, index) in vehicles"
-          :key="veh.vehicleId"
-          :class="['item-row', { selected: selectedIndex === index }]"
-          @click="selectVehicle(index)"
-        >
-          <div class="veh-info">
-            <span class="veh-name">{{ veh.name || 'Ismeretlen' }}</span>
-            <span class="veh-plate">{{ veh.plate }}</span>
+    <div class="split-layout">
+      <div class="list-side">
+        <div v-for="(v,i) in vehicles" :key="v.vehicleId" :class="['item-row',{selected:sel===i}]" @click="sel=i">
+          <div class="row-left">
+            <span class="row-name">{{ v.name || 'Ismeretlen' }}</span>
+            <span class="row-sub">{{ v.plate }} | #{{ v.vehicleId }}</span>
           </div>
-          <div class="veh-badges">
-            <span v-if="veh.impounded" class="badge" style="background: var(--accent-red); color: white;">Lefoglalva</span>
+          <span v-if="v.impounded" class="badge badge-red">PF</span>
+        </div>
+        <div v-if="!vehicles.length" class="empty-state">Nincs járműved.</div>
+      </div>
+      <div class="detail-side" v-if="selected">
+        <div class="card">
+          <h3 class="card-title">{{ selected.name }}</h3>
+          <div class="stat-row"><span class="stat-label">Rendszám:</span><span class="stat-value">{{ selected.plate }}</span></div>
+          <div class="stat-row"><span class="stat-label">Kilóméteróra:</span><span class="stat-value">{{ fmt(selected.odometer||0) }} km</span></div>
+          <div class="stat-row"><span class="stat-label">Alvázszám (ID):</span><span class="stat-value">{{ selected.vehicleId }}</span></div>
+          <div class="stat-row"><span class="stat-label">Üzemanyag:</span><span class="stat-value">{{ selected.fuelType }} ({{ Math.floor(selected.fuelLevel||0) }}%)</span></div>
+          <div class="stat-row"><span class="stat-label">Meghajtás:</span><span class="stat-value">{{ selected.driveType }}</span></div>
+          <div class="stat-row"><span class="stat-label">Lefoglalva:</span><span :class="['stat-value', selected.impounded?'red':'']">{{ selected.impounded?'Igen':'Nem' }}</span></div>
+          <div class="btn-row">
+            <button class="btn btn-blue" @click="markGPS">Megjelölés térképen</button>
+            <button class="btn btn-green" @click="showSell=true">Eladás</button>
           </div>
         </div>
-        <div v-if="vehicles.length === 0" class="empty-state">
-          Nincs jarmuved.
-        </div>
-      </div>
-
-      <!-- Vehicle Details -->
-      <div v-if="selectedVehicle" class="vehicle-details card">
-        <h3 class="card-title">{{ selectedVehicle.name }}</h3>
-        <div class="stat-row">
-          <span class="stat-label">Rendszam:</span>
-          <span class="stat-value">{{ selectedVehicle.plate }}</span>
-        </div>
-        <div class="stat-row">
-          <span class="stat-label">Kilometeroraallas:</span>
-          <span class="stat-value">{{ formatNumber(selectedVehicle.odometer || 0) }} km</span>
-        </div>
-        <div class="stat-row">
-          <span class="stat-label">ID:</span>
-          <span class="stat-value">{{ selectedVehicle.vehicleId }}</span>
-        </div>
-        <div class="stat-row">
-          <span class="stat-label">Uzemanyag:</span>
-          <span class="stat-value">{{ selectedVehicle.fuelType }} ({{ Math.floor(selectedVehicle.fuelLevel || 0) }}%)</span>
-        </div>
-        <div class="stat-row">
-          <span class="stat-label">Meghajtas:</span>
-          <span class="stat-value">{{ selectedVehicle.driveType }}</span>
-        </div>
-        <div class="stat-row">
-          <span class="stat-label">Lefoglalva:</span>
-          <span :class="['stat-value', selectedVehicle.impounded ? 'red' : '']">
-            {{ selectedVehicle.impounded ? 'Igen' : 'Nem' }}
-          </span>
-        </div>
-
-        <div class="vehicle-actions">
-          <button class="btn btn-blue" @click="markGPS">Megjeloles terkepen</button>
-          <button class="btn btn-green" @click="showSellModal = true">Eladas</button>
-        </div>
       </div>
     </div>
-
-    <!-- Sell Modal -->
-    <div v-if="showSellModal" class="modal-overlay" @click.self="showSellModal = false">
+    <!-- Slot buy modal -->
+    <div v-if="showSlotBuy" class="modal-overlay" @click.self="showSlotBuy=false">
       <div class="modal card">
-        <h3 class="card-title">Jarmu eladas</h3>
-        <input v-model="sellTargetId" class="input-field" placeholder="Celjatek server ID" type="number" />
-        <input v-model="sellPrice" class="input-field" placeholder="Eladasi ar ($)" type="number" style="margin-top: 8px" />
-        <div style="margin-top: 12px; display: flex; gap: 8px">
-          <button class="btn btn-green" @click="sellVehicle">Eladas</button>
-          <button class="btn btn-red" @click="showSellModal = false">Megse</button>
-        </div>
+        <h3 class="card-title">Jármű slot vásárlás</h3>
+        <p class="modal-hint">100 PP / jármű slot</p>
+        <input v-model="slotAmt" class="input-field" type="number" min="1" placeholder="Mennyiség"/>
+        <p class="modal-cost">Fizetendő: <strong class="cost-val">{{ fmt((slotAmt||0)*100) }} PP</strong></p>
+        <div class="btn-row"><button class="btn btn-green" @click="buySlot">Vásárlás</button><button class="btn btn-red" @click="showSlotBuy=false">Mégsem</button></div>
       </div>
     </div>
-
-    <!-- Buy Slot Modal -->
-    <div v-if="showBuySlotModal" class="modal-overlay" @click.self="showBuySlotModal = false">
+    <!-- Sell modal -->
+    <div v-if="showSell" class="modal-overlay" @click.self="showSell=false">
       <div class="modal card">
-        <h3 class="card-title">Slot vasarlas</h3>
-        <p style="color: var(--text-secondary); margin-bottom: 10px">{{ slotPrice }} PP / jarmu slot</p>
-        <input v-model="slotAmount" class="input-field" placeholder="Mennyiseg" type="number" min="1" />
-        <p style="margin-top: 8px; color: var(--text-secondary)">
-          Fizetendo: <span style="color: var(--accent-blue); font-weight: 700">{{ formatNumber((slotAmount || 0) * slotPrice) }} PP</span>
-        </p>
-        <div style="margin-top: 12px; display: flex; gap: 8px">
-          <button class="btn btn-green" @click="confirmBuySlot">Vasarlas</button>
-          <button class="btn btn-red" @click="showBuySlotModal = false">Megse</button>
-        </div>
+        <h3 class="card-title">Jármű eladás</h3>
+        <input v-model="sellTarget" class="input-field" type="number" placeholder="Céljátékos server ID"/>
+        <input v-model="sellPrice" class="input-field" type="number" placeholder="Eladási ár ($)" style="margin-top:8px"/>
+        <div class="btn-row"><button class="btn btn-green" @click="doSell">Eladás</button><button class="btn btn-red" @click="showSell=false">Mégsem</button></div>
       </div>
     </div>
   </div>
 </template>
-
 <script setup>
 import { ref, computed } from 'vue'
-
-const props = defineProps({
-  vehicles: { type: Array, default: () => [] },
-  limit: { type: Number, default: 5 }
-})
-
-const slotPrice = 100
-const selectedIndex = ref(0)
-const showSellModal = ref(false)
-const showBuySlotModal = ref(false)
-const sellTargetId = ref('')
+const props = defineProps({ vehicles:{type:Array,default:()=>[]}, limit:{type:Number,default:5} })
+const sel = ref(0)
+const showSlotBuy = ref(false)
+const showSell = ref(false)
+const slotAmt = ref(1)
+const sellTarget = ref('')
 const sellPrice = ref('')
-const slotAmount = ref(1)
-
-const selectedVehicle = computed(() => props.vehicles[selectedIndex.value] || null)
-
-function selectVehicle(index) {
-  selectedIndex.value = index
-}
-
-function formatNumber(num) {
-  if (!num) return '0'
-  return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.')
-}
-
-function markGPS() {
-  if (!selectedVehicle.value) return
-  fetch(`https://${getResource()}/markVehicleGPS`, {
-    method: 'POST',
-    body: JSON.stringify({ vehicleId: selectedVehicle.value.vehicleId })
-  })
-}
-
-function sellVehicle() {
-  if (!selectedVehicle.value || !sellTargetId.value || !sellPrice.value) return
-  fetch(`https://${getResource()}/sellVehicle`, {
-    method: 'POST',
-    body: JSON.stringify({
-      vehicleId: selectedVehicle.value.vehicleId,
-      targetId: parseInt(sellTargetId.value),
-      price: parseInt(sellPrice.value)
-    })
-  })
-  showSellModal.value = false
-}
-
-function buySlot() {
-  showBuySlotModal.value = true
-}
-
-function confirmBuySlot() {
-  const amt = parseInt(slotAmount.value) || 1
-  fetch(`https://${getResource()}/buyVehicleSlot`, {
-    method: 'POST',
-    body: JSON.stringify({ amount: amt })
-  })
-  showBuySlotModal.value = false
-}
-
-function getResource() {
-  return window.GetParentResourceName ? window.GetParentResourceName() : 'realrpg-dashboard'
-}
+const selected = computed(()=>props.vehicles[sel.value]||null)
+function fmt(n){return(n||0).toString().replace(/\B(?=(\d{3})+(?!\d))/g,'.')}
+function post(e,d){fetch(`https://${window.GetParentResourceName?window.GetParentResourceName():'realrpg-dashboard'}/${e}`,{method:'POST',body:JSON.stringify(d)})}
+function markGPS(){if(selected.value)post('markVehicleGPS',{vehicleId:selected.value.vehicleId})}
+function buySlot(){post('buyVehicleSlot',{amount:parseInt(slotAmt.value)||1});showSlotBuy.value=false}
+function doSell(){if(selected.value&&sellTarget.value&&sellPrice.value)post('sellVehicle',{vehicleId:selected.value.vehicleId,targetId:+sellTarget.value,price:+sellPrice.value});showSell.value=false}
 </script>
-
 <style scoped>
-.panel-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 15px;
-}
-.slot-info {
-  color: var(--text-secondary);
-  font-size: 14px;
-}
-.vehicles-layout {
-  display: grid;
-  grid-template-columns: 1fr 1.5fr;
-  gap: 15px;
-}
-.vehicle-list {
-  max-height: 500px;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-.veh-info {
-  display: flex;
-  flex-direction: column;
-}
-.veh-name {
-  font-weight: 600;
-  font-size: 13px;
-}
-.veh-plate {
-  font-size: 11px;
-  color: var(--accent-green);
-}
-.vehicle-actions {
-  display: flex;
-  gap: 8px;
-  margin-top: 15px;
-}
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0,0,0,0.6);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 100;
-}
-.modal {
-  width: 350px;
-}
-.empty-state {
-  text-align: center;
-  color: var(--text-muted);
-  padding: 30px;
-}
+.panel-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.slot-label{color:var(--text-secondary);font-size:14px;text-transform:uppercase;letter-spacing:1px}
+.slot-label strong{color:var(--sightgreen)}
+.split-layout{display:grid;grid-template-columns:1fr 1.6fr;gap:12px;min-height:300px}
+.list-side{display:flex;flex-direction:column;gap:4px;max-height:55vh;overflow-y:auto}
+.row-left{display:flex;flex-direction:column}
+.row-name{font-weight:700;font-size:13px}
+.row-sub{font-size:11px;color:var(--sightgreen);opacity:.8}
+.badge-red{background:var(--sightred);color:#fff}
+.btn-row{display:flex;gap:8px;margin-top:14px}
+.modal-hint{color:var(--text-secondary);font-size:12px;margin-bottom:8px}
+.modal-cost{margin-top:8px;font-size:13px;color:var(--text-secondary)}
+.cost-val{color:var(--sightblue)}
 </style>

@@ -1,24 +1,22 @@
 <template>
   <div class="news-panel">
-    <div class="card">
-      <h3 class="card-title">{{ news.title || 'Nincs hir' }}</h3>
-      <p class="news-date">{{ news.date || '' }}</p>
+    <div class="card news-card">
       <div class="news-badges" v-if="news.badges">
-        <span v-for="(badge, i) in news.badges" :key="i" class="badge" :style="{ background: badge.color }">
-          {{ badge.text }}
-        </span>
+        <span v-for="(b,i) in news.badges" :key="i" class="badge" :style="{background:b.color,color:'#000'}">{{ b.text }}</span>
       </div>
-      <p class="news-hint">Tovabbi informaciokert csatlakozz a Discord szerverunkre!</p>
+      <h2 class="news-title">{{ news.title || 'Nincs friss hír' }}</h2>
+      <span class="news-date">{{ news.date || '' }}</span>
+      <p class="news-hint">A hír további olvasásához csatlakozz a Discord szerverünkre!</p>
     </div>
   </div>
 </template>
-
 <script setup>
-defineProps({ news: { type: Object, default: () => ({}) } })
+defineProps({news:{type:Object,default:()=>({})}})
 </script>
-
 <style scoped>
-.news-date { color: var(--text-muted); font-size: 12px; margin-bottom: 10px; }
-.news-badges { display: flex; gap: 6px; margin-bottom: 12px; flex-wrap: wrap; }
-.news-hint { color: var(--text-secondary); font-size: 13px; margin-top: 15px; }
+.news-card{position:relative;overflow:hidden}
+.news-badges{display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap}
+.news-title{font-size:24px;font-weight:800;margin-bottom:4px;text-transform:uppercase}
+.news-date{font-size:12px;color:var(--text-muted)}
+.news-hint{margin-top:16px;font-size:12px;color:var(--text-secondary);font-style:italic}
 </style>

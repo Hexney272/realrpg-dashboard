@@ -1,57 +1,45 @@
 <template>
-  <div class="shop-panel">
+  <div class="ppshop-panel">
     <div class="shop-header">
-      <div class="shop-tabs">
-        <button v-for="(menu, i) in shop" :key="i" :class="['btn', activeMenu === i ? 'btn-blue' : '']" @click="activeMenu = i" style="font-size: 12px">
-          {{ menu.name }}
-        </button>
+      <div class="menu-tabs">
+        <button v-for="(m,i) in shop" :key="i" :class="['tab-btn',{active:tab===i}]" @click="tab=i">{{ m.name }}</button>
       </div>
-      <div class="pp-info">Egyenleg: <span style="color: var(--accent-blue); font-weight: 700">{{ formatNumber(balance) }} PP</span></div>
+      <div class="balance-box">Egyenleg: <strong>{{ fmt(balance) }} PP</strong></div>
     </div>
-
-    <div v-if="currentItems.length > 0" class="shop-grid">
-      <div v-for="(item, i) in currentItems" :key="i" class="shop-item card">
+    <div class="shop-grid" v-if="items.length">
+      <div v-for="(item,i) in items" :key="i" class="shop-card">
+        <div class="item-icon">{{ item.item==='money'?'$':'🔫' }}</div>
         <div class="item-name">{{ item.item }}</div>
-        <div class="item-price">{{ formatNumber(item.price) }} PP</div>
-        <button
-          :class="['btn', item.price <= balance ? 'btn-green' : 'btn-disabled btn-red']"
-          @click="buyItem(i)"
-          :disabled="item.price > balance"
-        >
-          {{ item.price <= balance ? 'Vasarlas' : 'Nincs eleg PP' }}
+        <div class="item-price-tag"><span class="price-num">{{ fmt(item.price) }}</span> PP</div>
+        <button :class="['btn',item.price<=balance?'btn-blue':'btn-disabled btn-red']" :disabled="item.price>balance" @click="buy(i)">
+          {{ item.price<=balance?'VÁSÁRLÁS':'Nincs elég PP' }}
         </button>
       </div>
     </div>
-    <div v-else class="empty-state">Nincs elem ebben a kategoriaban.</div>
+    <div v-else class="empty-state">Nincs elem.</div>
   </div>
 </template>
-
 <script setup>
 import { ref, computed } from 'vue'
-const props = defineProps({
-  shop: { type: Array, default: () => [] },
-  balance: { type: Number, default: 0 }
-})
-const activeMenu = ref(0)
-const currentItems = computed(() => (props.shop[activeMenu.value]?.items) || [])
-
-function formatNumber(num) { return (num || 0).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.') }
-function buyItem(itemIndex) {
-  fetch(`https://${getResource()}/buyPremiumItem`, {
-    method: 'POST',
-    body: JSON.stringify({ menuIndex: activeMenu.value + 1, itemIndex: itemIndex + 1, amount: 1 })
-  })
-}
-function getResource() { return window.GetParentResourceName ? window.GetParentResourceName() : 'realrpg-dashboard' }
+const props = defineProps({shop:{type:Array,default:()=>[]},balance:{type:Number,default:0}})
+const tab=ref(0)
+const items=computed(()=>(props.shop[tab.value]?.items)||[])
+function fmt(n){return(n||0).toString().replace(/\B(?=(\d{3})+(?!\d))/g,'.')}
+function buy(i){fetch(`https://${window.GetParentResourceName?window.GetParentResourceName():'realrpg-dashboard'}/buyPremiumItem`,{method:'POST',body:JSON.stringify({menuIndex:tab.value+1,itemIndex:i+1,amount:1})})}
 </script>
-
 <style scoped>
-.shop-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 8px; }
-.shop-tabs { display: flex; gap: 6px; flex-wrap: wrap; }
-.pp-info { font-size: 13px; color: var(--text-secondary); }
-.shop-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; }
-.shop-item { text-align: center; padding: 16px; }
-.item-name { font-weight: 600; font-size: 13px; margin-bottom: 6px; color: var(--text-primary); text-transform: uppercase; }
-.item-price { color: var(--accent-green); font-weight: 700; margin-bottom: 10px; font-size: 14px; }
-.empty-state { text-align: center; color: var(--text-muted); padding: 40px; }
+.shop-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px}
+.menu-tabs{display:flex;gap:4px;flex-wrap:wrap}
+.tab-btn{padding:6px 14px;border:1px solid var(--sightgrey4);background:var(--sightgrey2);color:var(--text-secondary);border-radius:3px;font-size:12px;font-weight:700;cursor:pointer;transition:all .2s;text-transform:uppercase}
+.tab-btn:hover{border-color:var(--sightblue);color:var(--sightblue)}
+.tab-btn.active{background:var(--sightblue);color:#fff;border-color:var(--sightblue)}
+.balance-box{font-size:13px;color:var(--text-secondary)}
+.balance-box strong{color:var(--sightblue)}
+.shop-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px}
+.shop-card{background:var(--sightgrey2);border:1px solid var(--sightgrey3);border-radius:4px;padding:14px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:6px;transition:border-color .2s}
+.shop-card:hover{border-color:var(--sightblue)}
+.item-icon{font-size:28px;margin-bottom:4px}
+.item-name{font-size:12px;font-weight:700;text-transform:uppercase;color:var(--text-primary)}
+.item-price-tag{background:var(--sightgreen);color:#000;padding:2px 8px;border-radius:2px;font-size:12px;font-weight:700}
+.price-num{font-size:13px}
 </style>
