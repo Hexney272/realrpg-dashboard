@@ -90,6 +90,16 @@ AddEventHandler('dashboard:receiveNews', function(news)
     })
 end)
 
+-- Receive online players
+RegisterNetEvent('dashboard:receiveOnlinePlayers')
+AddEventHandler('dashboard:receiveOnlinePlayers', function(players, count)
+    SendNUIMessage({
+        action = 'updateOnlinePlayers',
+        players = players,
+        count = count
+    })
+end)
+
 -- Receive admin list
 RegisterNetEvent('dashboard:receiveAdminList')
 AddEventHandler('dashboard:receiveAdminList', function(admins)
@@ -177,6 +187,11 @@ end)
 
 RegisterNUICallback('requestNews', function(data, cb)
     TriggerServerEvent('dashboard:requestNews')
+    cb('ok')
+end)
+
+RegisterNUICallback('requestOnlinePlayers', function(data, cb)
+    TriggerServerEvent('dashboard:requestOnlinePlayers')
     cb('ok')
 end)
 

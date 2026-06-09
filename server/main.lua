@@ -1,271 +1,288 @@
--- Server-side main dashboard logic
+-- ============================================
+-- RealRPG Dashboard - Server Main
+-- ESX Legacy Integration
+-- ============================================
 
--- Request all dashboard data
+ESX = exports['es_extended']:getSharedObject()
+
+-- ============================================
+-- REQUEST ALL DASHBOARD DATA
+-- ============================================
 RegisterNetEvent('dashboard:requestData')
 AddEventHandler('dashboard:requestData', function()
     local src = source
-    local identifier = GetPlayerIdentifier(src, 0) -- steam/license/discord
+    local xPlayer = ESX.GetPlayerFromId(src)
+    if not xPlayer then return end
 
-    -- Build player data
+    local identifier = xPlayer.getIdentifier()
+
+    -- Get played time from users table
+    local userResult = MySQL.Sync.fetchAll('SELECT playtime, premium_points, group_name FROM users WHERE identifier = ?', { identifier })
+    local playtime = 0
+    local premiumPoints = 0
+    local adminGroup = 'user'
+    if userResult and userResult[1] then
+        playtime = userResult[1].playtime or 0
+        premiumPoints = userResult[1].premium_points or 0
+        adminGroup = userResult[1].group_name or 'user'
+    end
+
+    -- Vehicle count
+    local vehCount = MySQL.Sync.fetchScalar('SELECT COUNT(*) FROM owned_vehicles WHERE owner = ?', { identifier }) or 0
+
+    -- Properties count
+    local propCount = MySQL.Sync.fetchScalar('SELECT COUNT(*) FROM owned_properties WHERE owner = ?', { identifier }) or 0
+
     local data = {
-        name = GetPlayerName(src),
+        name = xPlayer.getName(),
         serverId = src,
-        premiumBalance = GetPlayerPremiumPoints(src),
-        money = GetPlayerMoney(src),
-        bankMoney = GetPlayerBankMoney(src),
-        playedMinutes = GetPlayerPlayedMinutes(src),
-        level = GetLevel(GetPlayerPlayedMinutes(src)),
-        vehicleCount = GetPlayerVehicleCount(src),
-        interiorCount = GetPlayerInteriorCount(src),
-        accountId = GetPlayerAccountId(src),
-        characterId = GetPlayerCharacterId(src),
+        premiumBalance = premiumPoints,
+        money = xPlayer.getMoney(),
+        bankMoney = xPlayer.getAccount('bank').money,
+        blackMoney = xPlayer.getAccount('black_money').money,
+        playedMinutes = math.floor(playtime / 60), -- playtime stored in seconds in ESX
+        level = GetLevel(math.floor(playtime / 60)),
+        vehicleCount = vehCount,
+        interiorCount = propCount,
+        job = xPlayer.getJob().name,
+        jobLabel = xPlayer.getJob().label,
+        jobGrade = xPlayer.getJob().grade,
+        jobGradeLabel = xPlayer.getJob().grade_label,
+        identifier = identifier,
+        adminGroup = adminGroup,
     }
 
     TriggerClientEvent('dashboard:receiveData', src, data)
 
-    -- Also send premium shop config, settings, and news
+    -- Also send premium shop config
     TriggerClientEvent('dashboard:receivePremiumShop', src, Config.PremiumShop)
+
+    -- Send news
     TriggerClientEvent('dashboard:receiveNews', src, Config.LatestNews)
 
-    -- Send player settings from DB
-    local charId = GetPlayerCharacterId(src)
-    local settingsJson = nil
-    if charId then
-        settingsJson = MySQL.Sync.fetchScalar('SELECT settings FROM characters WHERE characterId = ?', { charId })
-    end
+    -- Send settings from KVP or database
+    local settingsJson = MySQL.Sync.fetchScalar('SELECT dashboard_settings FROM users WHERE identifier = ?', { identifier })
     local playerSettings = {}
-    if settingsJson and settingsJson ~= '' then
+    if settingsJson and settingsJson ~= '' and settingsJson ~= 'NULL' then
         playerSettings = json.decode(settingsJson) or {}
     end
-    -- Merge with defaults
-    playerSettings.walkingStyle = playerSettings.walkingStyle or 1
-    playerSettings.streamerMode = playerSettings.streamerMode or false
-    playerSettings.hudVisible = playerSettings.hudVisible ~= false
-    playerSettings.nametagsVisible = playerSettings.nametagsVisible ~= false
-    playerSettings.voiceVolume = playerSettings.voiceVolume or 50
-    playerSettings.farClip = playerSettings.farClip or 3000
-    playerSettings.fogDistance = playerSettings.fogDistance or 2000
-    playerSettings.blips3d = playerSettings.blips3d ~= false
-    playerSettings.platesVisible = playerSettings.platesVisible ~= false
-    playerSettings.speedoUnit = playerSettings.speedoUnit or 'KM/H'
-    playerSettings.gpsSoundPack = playerSettings.gpsSoundPack or 'Női'
-    playerSettings.crosshairType = playerSettings.crosshairType or 1
-    playerSettings.crosshairColor = playerSettings.crosshairColor or '#ffffff'
-    playerSettings.infoboxChat = playerSettings.infoboxChat or false
-    playerSettings.infoboxSound = playerSettings.infoboxSound ~= false
-    playerSettings.kickMessages = playerSettings.kickMessages or false
-    playerSettings.groupMessages = playerSettings.groupMessages ~= false
-    playerSettings.oocTimestamps = playerSettings.oocTimestamps or false
+
+    -- Merge with working defaults
+    local defaults = {
+        walkingStyle = 1,
+        voiceVolume = 50,
+        hudVisible = true,
+        nametagsVisible = true,
+        streamerMode = false,
+        speedoUnit = 'KM/H',
+    }
+    for k, v in pairs(defaults) do
+        if playerSettings[k] == nil then
+            playerSettings[k] = v
+        end
+    end
 
     TriggerClientEvent('dashboard:receiveSettings', src, playerSettings)
-
-    -- Send keybind defaults
-    TriggerClientEvent('dashboard:receiveKeybinds', src, Config.DefaultBinds)
 end)
 
--- Request news
+-- ============================================
+-- NEWS
+-- ============================================
 RegisterNetEvent('dashboard:requestNews')
 AddEventHandler('dashboard:requestNews', function()
-    local src = source
-    TriggerClientEvent('dashboard:receiveNews', src, Config.LatestNews)
+    TriggerClientEvent('dashboard:receiveNews', source, Config.LatestNews)
 end)
 
--- Request admin list
+-- ============================================
+-- ADMIN LIST
+-- ============================================
 RegisterNetEvent('dashboard:requestAdminList')
 AddEventHandler('dashboard:requestAdminList', function()
     local src = source
-    local admins = GetOnlineAdmins()
-    TriggerClientEvent('dashboard:receiveAdminList', src, admins)
-end)
-
--- Create report
-RegisterNetEvent('dashboard:createReport')
-AddEventHandler('dashboard:createReport', function(title, category, description)
-    local src = source
-    -- Insert report into database or handle via your report system
-    print(string.format('[Dashboard Report] Player: %s | Title: %s | Category: %s | Desc: %s',
-        GetPlayerName(src), title, category, description))
-
-    TriggerClientEvent('dashboard:notify', src, 'success', 'A reportod sikeresen elkuldve!')
-end)
-
--- Save setting server-side
-RegisterNetEvent('dashboard:saveSetting')
-AddEventHandler('dashboard:saveSetting', function(key, value)
-    local src = source
-    local charId = GetPlayerCharacterId(src)
-    if charId then
-        -- Save to database
-        MySQL.Async.execute('UPDATE characters SET settings = JSON_SET(COALESCE(settings, "{}"), ?, ?) WHERE characterId = ?',
-            { '$.' .. key, tostring(value), charId })
-    end
-end)
-
--- Set walking style
-RegisterNetEvent('dashboard:setWalkingStyle')
-AddEventHandler('dashboard:setWalkingStyle', function(styleIndex)
-    local src = source
-    local charId = GetPlayerCharacterId(src)
-    if charId and Config.WalkingStyles[styleIndex] then
-        MySQL.Async.execute('UPDATE characters SET walkingStyle = ? WHERE characterId = ?',
-            { styleIndex, charId })
-    end
-end)
-
--- =============================================
--- HELPER FUNCTIONS (Adapt to your framework)
--- =============================================
-
---- Get player premium points (adapt to your economy system)
-function GetPlayerPremiumPoints(src)
-    -- Replace with your actual implementation
-    -- Example with oxmysql:
-    local identifier = GetPlayerIdentifier(src, 0)
-    if not identifier then return 0 end
-    local result = MySQL.Sync.fetchScalar('SELECT premiumPoints FROM accounts WHERE identifier = ?', { identifier })
-    return result or 0
-end
-
---- Get player money
-function GetPlayerMoney(src)
-    -- Adapt to your economy framework (esx, qb, etc.)
-    -- Example for ESX:
-    -- local xPlayer = ESX.GetPlayerFromId(src)
-    -- return xPlayer.getMoney()
-    return 0
-end
-
---- Get player bank money
-function GetPlayerBankMoney(src)
-    -- Adapt to your framework
-    return 0
-end
-
---- Get player played minutes
-function GetPlayerPlayedMinutes(src)
-    local identifier = GetPlayerIdentifier(src, 0)
-    if not identifier then return 0 end
-    local result = MySQL.Sync.fetchScalar('SELECT playedMinutes FROM characters WHERE identifier = ?', { identifier })
-    return result or 0
-end
-
---- Get player vehicle count
-function GetPlayerVehicleCount(src)
-    local charId = GetPlayerCharacterId(src)
-    if not charId then return 0 end
-    local result = MySQL.Sync.fetchScalar('SELECT COUNT(*) FROM vehicles WHERE characterId = ?', { charId })
-    return result or 0
-end
-
---- Get player interior count
-function GetPlayerInteriorCount(src)
-    local charId = GetPlayerCharacterId(src)
-    if not charId then return 0 end
-    local result = MySQL.Sync.fetchScalar('SELECT COUNT(*) FROM interiors WHERE owner = ?', { charId })
-    return result or 0
-end
-
---- Get player account ID
-function GetPlayerAccountId(src)
-    local identifier = GetPlayerIdentifier(src, 0)
-    if not identifier then return 0 end
-    local result = MySQL.Sync.fetchScalar('SELECT accountId FROM accounts WHERE identifier = ?', { identifier })
-    return result or 0
-end
-
---- Get player character ID
-function GetPlayerCharacterId(src)
-    local identifier = GetPlayerIdentifier(src, 0)
-    if not identifier then return 0 end
-    local result = MySQL.Sync.fetchScalar('SELECT characterId FROM characters WHERE identifier = ?', { identifier })
-    return result or 0
-end
-
---- Get online admins
-function GetOnlineAdmins()
     local admins = {}
-    for _, playerId in ipairs(GetPlayers()) do
-        local adminLevel = GetPlayerAdminLevel(tonumber(playerId))
-        if adminLevel and adminLevel >= 1 then
+    local xPlayers = ESX.GetExtendedPlayers()
+
+    for _, xPlayer in pairs(xPlayers) do
+        local group = xPlayer.getGroup()
+        local level = 0
+        if group == 'superadmin' then level = 10
+        elseif group == 'admin' then level = 6
+        elseif group == 'mod' then level = 3
+        end
+
+        if level > 0 then
             table.insert(admins, {
-                name = GetPlayerName(tonumber(playerId)),
-                id = playerId,
-                level = adminLevel,
-                onDuty = IsAdminOnDuty(tonumber(playerId)),
+                name = xPlayer.getName(),
+                id = xPlayer.source,
+                level = level,
+                onDuty = true, -- ESX doesn't have admin duty by default
             })
         end
     end
+
     table.sort(admins, function(a, b) return a.level > b.level end)
-    return admins
-end
+    TriggerClientEvent('dashboard:receiveAdminList', src, admins)
+end)
 
---- Get admin level (adapt to your permissions system)
-function GetPlayerAdminLevel(src)
-    -- Replace with your actual admin system
-    -- Example: return GetResourceKvpInt('admin_' .. GetPlayerIdentifier(src, 0))
-    return 0
-end
+-- ============================================
+-- REPORT SYSTEM
+-- ============================================
+RegisterNetEvent('dashboard:createReport')
+AddEventHandler('dashboard:createReport', function(title, category, description)
+    local src = source
+    local xPlayer = ESX.GetPlayerFromId(src)
+    if not xPlayer then return end
 
---- Is admin on duty
-function IsAdminOnDuty(src)
-    return false
-end
+    -- Save to database
+    MySQL.Async.execute([[
+        INSERT INTO dashboard_reports (identifier, player_name, title, category, description, created_at)
+        VALUES (?, ?, ?, ?, ?, NOW())
+    ]], { xPlayer.getIdentifier(), xPlayer.getName(), title, category, description })
 
--- Invite system
+    -- Notify admins
+    local xPlayers = ESX.GetExtendedPlayers()
+    for _, admin in pairs(xPlayers) do
+        if admin.getGroup() == 'admin' or admin.getGroup() == 'superadmin' then
+            TriggerClientEvent('dashboard:notify', admin.source, 'info',
+                '[Report] ' .. xPlayer.getName() .. ': ' .. title)
+        end
+    end
+
+    TriggerClientEvent('dashboard:notify', src, 'success', 'A reportod sikeresen elküldve!')
+end)
+
+-- ============================================
+-- SAVE SETTINGS
+-- ============================================
+RegisterNetEvent('dashboard:saveSetting')
+AddEventHandler('dashboard:saveSetting', function(key, value)
+    local src = source
+    local xPlayer = ESX.GetPlayerFromId(src)
+    if not xPlayer then return end
+
+    local identifier = xPlayer.getIdentifier()
+
+    -- Get current settings
+    local settingsJson = MySQL.Sync.fetchScalar('SELECT dashboard_settings FROM users WHERE identifier = ?', { identifier })
+    local settings = {}
+    if settingsJson and settingsJson ~= '' and settingsJson ~= 'NULL' then
+        settings = json.decode(settingsJson) or {}
+    end
+
+    settings[key] = value
+
+    MySQL.Async.execute('UPDATE users SET dashboard_settings = ? WHERE identifier = ?',
+        { json.encode(settings), identifier })
+end)
+
+-- ============================================
+-- WALKING STYLE
+-- ============================================
+RegisterNetEvent('dashboard:setWalkingStyle')
+AddEventHandler('dashboard:setWalkingStyle', function(styleIndex)
+    local src = source
+    if Config.WalkingStyles[styleIndex] then
+        -- Broadcast to nearby players so they see the change
+        TriggerClientEvent('dashboard:applyWalkingStyle', -1, src, Config.WalkingStyles[styleIndex].clipset)
+    end
+end)
+
+-- ============================================
+-- INVITE SYSTEM
+-- ============================================
 RegisterNetEvent('dashboard:requestInviteData')
 AddEventHandler('dashboard:requestInviteData', function()
     local src = source
-    local accountId = GetPlayerAccountId(src)
-    if not accountId or accountId == 0 then return end
+    local xPlayer = ESX.GetPlayerFromId(src)
+    if not xPlayer then return end
 
-    local inviteCode = MySQL.Sync.fetchScalar('SELECT inviteCode FROM accounts WHERE accountId = ?', { accountId })
-    if not inviteCode then
+    local identifier = xPlayer.getIdentifier()
+
+    -- Get or generate invite code
+    local inviteCode = MySQL.Sync.fetchScalar('SELECT invite_code FROM users WHERE identifier = ?', { identifier })
+    if not inviteCode or inviteCode == '' or inviteCode == 'NULL' then
         inviteCode = GenerateInviteCode()
-        MySQL.Async.execute('UPDATE accounts SET inviteCode = ? WHERE accountId = ?', { inviteCode, accountId })
+        MySQL.Async.execute('UPDATE users SET invite_code = ? WHERE identifier = ?', { inviteCode, identifier })
     end
 
     -- Get invited players
-    local invitedPlayers = MySQL.Sync.fetchAll(
-        'SELECT a.accountId, c.name, c.playedMinutes, a.lastOnline, a.achievements FROM accounts a LEFT JOIN characters c ON c.accountId = a.accountId WHERE a.invitedBy = ?',
-        { inviteCode }
-    )
+    local invitedPlayers = MySQL.Sync.fetchAll([[
+        SELECT u.identifier, u.firstname, u.lastname, u.playtime
+        FROM users u
+        WHERE u.invited_by = ?
+    ]], { inviteCode })
+
+    local processedInvited = {}
+    if invitedPlayers then
+        for _, p in ipairs(invitedPlayers) do
+            table.insert(processedInvited, {
+                name = (p.firstname or '') .. ' ' .. (p.lastname or ''),
+                playedMinutes = math.floor((p.playtime or 0) / 60),
+                identifier = p.identifier,
+            })
+        end
+    end
 
     -- Check achievements
-    local awards = CheckPlayerAchievements(invitedPlayers or {}, src)
+    local awards = CheckPlayerAchievements(processedInvited, src)
 
-    TriggerClientEvent('dashboard:receiveInviteData', src, inviteCode, invitedPlayers or {}, awards)
+    TriggerClientEvent('dashboard:receiveInviteData', src, inviteCode, processedInvited, awards)
 end)
 
--- Claim award
+-- ============================================
+-- CLAIM AWARD
+-- ============================================
 RegisterNetEvent('dashboard:claimAward')
 AddEventHandler('dashboard:claimAward', function(awardIndex)
     local src = source
+    local xPlayer = ESX.GetPlayerFromId(src)
+    if not xPlayer then return end
     if not Config.AwardDetails[awardIndex] then return end
 
-    -- TODO: Verify the award is actually earned and not already claimed
     local reward = Config.AwardDetails[awardIndex].reward
     if reward.type == 'premium' then
-        GivePlayerPremiumPoints(src, reward.amount)
+        MySQL.Async.execute('UPDATE users SET premium_points = premium_points + ? WHERE identifier = ?',
+            { reward.amount, xPlayer.getIdentifier() })
+        local newBal = MySQL.Sync.fetchScalar('SELECT premium_points FROM users WHERE identifier = ?', { xPlayer.getIdentifier() }) or 0
+        TriggerClientEvent('dashboard:updatePremiumBalance', src, newBal)
     elseif reward.type == 'money' then
-        GivePlayerMoney(src, reward.amount)
+        xPlayer.addAccountMoney('bank', reward.amount)
     end
 
-    TriggerClientEvent('dashboard:notify', src, 'success', 'Jutalom sikeresen athozva!')
+    TriggerClientEvent('dashboard:notify', src, 'success', 'Jutalom sikeresen átvéve!')
 end)
 
-function GivePlayerPremiumPoints(src, amount)
-    local accountId = GetPlayerAccountId(src)
-    if accountId and accountId > 0 then
-        MySQL.Async.execute('UPDATE accounts SET premiumPoints = premiumPoints + ? WHERE accountId = ?', { amount, accountId })
-        -- Refresh client balance
-        local newBalance = MySQL.Sync.fetchScalar('SELECT premiumPoints FROM accounts WHERE accountId = ?', { accountId })
-        TriggerClientEvent('dashboard:updatePremiumBalance', src, newBalance or 0)
-    end
-end
+-- ============================================
+-- ONLINE PLAYERS (extra feature)
+-- ============================================
+RegisterNetEvent('dashboard:requestOnlinePlayers')
+AddEventHandler('dashboard:requestOnlinePlayers', function()
+    local src = source
+    local players = {}
+    local xPlayers = ESX.GetExtendedPlayers()
 
-function GivePlayerMoney(src, amount)
-    -- Adapt to your economy framework
-    -- ESX example: local xPlayer = ESX.GetPlayerFromId(src) xPlayer.addMoney(amount)
+    for _, xPlayer in pairs(xPlayers) do
+        table.insert(players, {
+            id = xPlayer.source,
+            name = xPlayer.getName(),
+            job = xPlayer.getJob().label,
+            ping = GetPlayerPing(xPlayer.source),
+        })
+    end
+
+    table.sort(players, function(a, b) return a.id < b.id end)
+    TriggerClientEvent('dashboard:receiveOnlinePlayers', src, players, #players)
+end)
+
+-- ============================================
+-- HELPER FUNCTIONS
+-- ============================================
+
+function GetPlayerPremiumPoints(src)
+    local xPlayer = ESX.GetPlayerFromId(src)
+    if not xPlayer then return 0 end
+    local result = MySQL.Sync.fetchScalar('SELECT premium_points FROM users WHERE identifier = ?', { xPlayer.getIdentifier() })
+    return result or 0
 end
 
 function CheckPlayerAchievements(invitedPlayers, src)
@@ -277,7 +294,6 @@ function CheckPlayerAchievements(invitedPlayers, src)
             done = false,
             taken = false,
         }
-        -- Simple check for invite-based awards
         local parts = SplitString(award.id, ':')
         if parts[1] == 'invite' then
             local target = tonumber(parts[2]) or 0
@@ -285,23 +301,23 @@ function CheckPlayerAchievements(invitedPlayers, src)
                 awards[i].done = true
             end
         end
-        -- Additional checks can be added here
     end
     return awards
 end
 
 -- Export functions
 exports('generateInviteCode', GenerateInviteCode)
-exports('givePlayerAchievement', function(src, achievementType)
-    -- Implement achievement giving
-end)
 exports('isInviteCodeOccupied', function(code)
-    local result = MySQL.Sync.fetchScalar('SELECT COUNT(*) FROM accounts WHERE inviteCode = ?', { code })
+    local result = MySQL.Sync.fetchScalar('SELECT COUNT(*) FROM users WHERE invite_code = ?', { code })
     return (result or 0) > 0
 end)
 exports('getWalkingStyle', function(src)
-    local charId = GetPlayerCharacterId(src)
-    if not charId then return 1 end
-    local result = MySQL.Sync.fetchScalar('SELECT walkingStyle FROM characters WHERE characterId = ?', { charId })
-    return result or 1
+    local xPlayer = ESX.GetPlayerFromId(src)
+    if not xPlayer then return 1 end
+    local settingsJson = MySQL.Sync.fetchScalar('SELECT dashboard_settings FROM users WHERE identifier = ?', { xPlayer.getIdentifier() })
+    if settingsJson then
+        local s = json.decode(settingsJson)
+        if s and s.walkingStyle then return s.walkingStyle end
+    end
+    return 1
 end)

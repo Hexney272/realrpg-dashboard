@@ -32,6 +32,7 @@ server_scripts {
     'server/vehicles.lua',
     'server/animals.lua',
     'server/interiors.lua',
+    'server/groups.lua',
     'server/news.lua',
     'server/ppshop.lua',
 }

@@ -75,6 +75,8 @@
             <NewsPanel v-if="expandedCard.id === 'news'" :news="news" />
             <AdminPanel v-if="expandedCard.id === 'admins'" :admins="admins" />
             <InvitePanel v-if="expandedCard.id === 'invite'" :inviteCode="inviteCode" :invitedPlayers="invitedPlayers" :awards="awards" />
+            <ServerInfoPanel v-if="expandedCard.id === 'serverinfo'" :data="playerData" :weather="weather" />
+            <OnlinePlayersPanel v-if="expandedCard.id === 'players'" :players="onlinePlayers" :maxPlayers="64" />
           </div>
         </div>
       </transition>
@@ -107,6 +109,8 @@ import PremiumShopPanel from './components/PremiumShopPanel.vue'
 import NewsPanel from './components/NewsPanel.vue'
 import AdminPanel from './components/AdminPanel.vue'
 import InvitePanel from './components/InvitePanel.vue'
+import ServerInfoPanel from './components/ServerInfoPanel.vue'
+import OnlinePlayersPanel from './components/OnlinePlayersPanel.vue'
 
 const isOpen = ref(false)
 const expandedCard = ref(null)
@@ -125,6 +129,9 @@ const admins = ref([])
 const inviteCode = ref('')
 const invitedPlayers = ref([])
 const awards = ref([])
+const onlinePlayers = ref([])
+const onlineCount = ref(0)
+const weather = ref({})
 const keybinds = ref([])
 const notifications = ref([])
 
@@ -229,6 +236,26 @@ const gridCards = computed(() => [
     bottomLabel: 'Kódod:',
     bottomValue: inviteCode.value || '...',
   },
+  {
+    id: 'serverinfo',
+    colSpan: 1, rowSpan: 1,
+    topLabel1: 'Szerver',
+    topLabel2: 'infó',
+    bgClass: 'bg-dark-card',
+    bottomInfo: true,
+    bottomLabel: 'Online:',
+    bottomValue: onlineCount.value + '/64',
+  },
+  {
+    id: 'players',
+    colSpan: 1, rowSpan: 1,
+    topLabel1: 'Online',
+    topLabel2: 'játékosok',
+    bgClass: 'bg-green-gradient',
+    bottomInfo: true,
+    bottomLabel: '',
+    bottomValue: onlineCount.value + ' fő',
+  },
 ])
 
 function cardStyle(card) {
@@ -248,6 +275,7 @@ function openCard(card) {
   if (card.id === 'admins') fetch(`https://${resource}/requestAdminList`, { method: 'POST', body: '{}' })
   if (card.id === 'invite') fetch(`https://${resource}/requestInviteData`, { method: 'POST', body: '{}' })
   if (card.id === 'news') fetch(`https://${resource}/requestNews`, { method: 'POST', body: '{}' })
+  if (card.id === 'players' || card.id === 'serverinfo') fetch(`https://${resource}/requestOnlinePlayers`, { method: 'POST', body: '{}' })
 
   expandedCard.value = card
 }
@@ -325,6 +353,13 @@ function handleMessage(event) {
       break
     case 'updateKeybinds':
       keybinds.value = data.keybinds || []
+      break
+    case 'updateOnlinePlayers':
+      onlinePlayers.value = data.players || []
+      onlineCount.value = data.count || data.players?.length || 0
+      break
+    case 'updateWeather':
+      weather.value = data.weather || {}
       break
     case 'updateInviteData':
       inviteCode.value = data.inviteCode || ''
