@@ -29,7 +29,7 @@
           </div>
           <div class="qstat">
             <span class="qstat-value blue">{{ formatNumber(premiumPoints) }}</span>
-            <span class="qstat-label">Prémium pont</span>
+            <span class="qstat-label">RealCoin</span>
           </div>
         </div>
       </div>
@@ -70,7 +70,7 @@ const uptime = computed(() => props.data.uptime || 0)
 const totalVehicles = computed(() => props.data.vehicleCount || 0)
 const totalProperties = computed(() => props.data.interiorCount || 0)
 const totalMoney = computed(() => (props.data.money || 0) + (props.data.bankMoney || 0))
-const premiumPoints = computed(() => props.data.premiumBalance || 0)
+const premiumPoints = computed(() => props.data.realcoinBalance || 0)
 
 const weatherName = computed(() => props.weather.name || 'Napos')
 const gameTime = computed(() => props.weather.time || '12:00')
@@ -82,7 +82,7 @@ const weatherIcon = computed(() => {
 const tips = [
   'Használd a /gps parancsot a legközelebbi garázs megtalálásához!',
   'A streamer mód aktiválásával elrejtheted a szenzitív adataidat.',
-  'Premium pontokkal jármű slotokat vásárolhatsz a dashboardon!',
+  'RealCoin-nal jármű slotokat vásárolhatsz a dashboardon!',
   'A frakciódban a rangod határozza meg a jogosultságaidat.',
   'Mentsd el a kedvenc séta stílusodat a beállításokban!',
   'A járműveid GPS-en megjelölhetők ha világban vannak.',

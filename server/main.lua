@@ -17,13 +17,13 @@ AddEventHandler('dashboard:requestData', function()
     local identifier = xPlayer.getIdentifier()
 
     -- Get played time from users table
-    local userResult = MySQL.Sync.fetchAll('SELECT playtime, premium_points, group_name FROM users WHERE identifier = ?', { identifier })
+    local userResult = MySQL.Sync.fetchAll('SELECT playtime, realcoins, group_name FROM users WHERE identifier = ?', { identifier })
     local playtime = 0
-    local premiumPoints = 0
+    local realcoins = 0
     local adminGroup = 'user'
     if userResult and userResult[1] then
         playtime = userResult[1].playtime or 0
-        premiumPoints = userResult[1].premium_points or 0
+        realcoins = userResult[1].realcoins or 0
         adminGroup = userResult[1].group_name or 'user'
     end
 
@@ -36,7 +36,7 @@ AddEventHandler('dashboard:requestData', function()
     local data = {
         name = xPlayer.getName(),
         serverId = src,
-        premiumBalance = premiumPoints,
+        realcoinBalance = realcoins,
         money = xPlayer.getMoney(),
         bankMoney = xPlayer.getAccount('bank').money,
         blackMoney = xPlayer.getAccount('black_money').money,
@@ -54,7 +54,7 @@ AddEventHandler('dashboard:requestData', function()
 
     TriggerClientEvent('dashboard:receiveData', src, data)
 
-    -- Also send premium shop config
+    -- Also send RealCoin shop config
     TriggerClientEvent('dashboard:receivePremiumShop', src, Config.PremiumShop)
 
     -- Send news
@@ -94,33 +94,87 @@ AddEventHandler('dashboard:requestNews', function()
 end)
 
 -- ============================================
--- ADMIN LIST
+-- ADMIN LIST (ESX group mező alapján)
 -- ============================================
+
+-- Admin szintek konfigurálása (bővíthető)
+Config.AdminGroups = {
+    ['superadmin']  = { level = 11, title = 'Tulajdonos' },
+    ['dev']         = { level = 10, title = 'Fejlesztő' },
+    ['admin']       = { level = 6,  title = 'Admin' },
+    ['mod']         = { level = 3,  title = 'Moderátor' },
+    ['support']     = { level = 1,  title = 'Adminsegéd' },
+    ['helper']      = { level = 1,  title = 'Adminsegéd' },
+}
+
 RegisterNetEvent('dashboard:requestAdminList')
 AddEventHandler('dashboard:requestAdminList', function()
     local src = source
     local admins = {}
     local xPlayers = ESX.GetExtendedPlayers()
 
+    -- Online adminok (ESX group alapján)
     for _, xPlayer in pairs(xPlayers) do
         local group = xPlayer.getGroup()
-        local level = 0
-        if group == 'superadmin' then level = 10
-        elseif group == 'admin' then level = 6
-        elseif group == 'mod' then level = 3
-        end
+        local adminInfo = Config.AdminGroups[group]
 
-        if level > 0 then
+        if adminInfo then
             table.insert(admins, {
                 name = xPlayer.getName(),
                 id = xPlayer.source,
-                level = level,
-                onDuty = true, -- ESX doesn't have admin duty by default
+                level = adminInfo.level,
+                title = adminInfo.title,
+                group = group,
+                onDuty = true, -- Online = duty-ban van
+                online = true,
             })
         end
     end
 
-    table.sort(admins, function(a, b) return a.level > b.level end)
+    -- Offline adminok is megjeleníthetők (users tábla group_name mező)
+    local offlineAdmins = MySQL.Sync.fetchAll([[
+        SELECT identifier, firstname, lastname, group_name
+        FROM users
+        WHERE group_name IN ('superadmin', 'dev', 'admin', 'mod', 'support', 'helper')
+    ]])
+
+    if offlineAdmins then
+        for _, dbAdmin in ipairs(offlineAdmins) do
+            -- Ne adjuk hozzá ha már online listában van
+            local alreadyOnline = false
+            for _, onlineAdmin in ipairs(admins) do
+                local xP = ESX.GetPlayerFromId(onlineAdmin.id)
+                if xP and xP.getIdentifier() == dbAdmin.identifier then
+                    alreadyOnline = true
+                    break
+                end
+            end
+
+            if not alreadyOnline then
+                local adminInfo = Config.AdminGroups[dbAdmin.group_name]
+                if adminInfo then
+                    table.insert(admins, {
+                        name = (dbAdmin.firstname or '') .. ' ' .. (dbAdmin.lastname or ''),
+                        id = '-',
+                        level = adminInfo.level,
+                        title = adminInfo.title,
+                        group = dbAdmin.group_name,
+                        onDuty = false,
+                        online = false,
+                    })
+                end
+            end
+        end
+    end
+
+    -- Rendezés: online elsők, aztán szint szerint csökkenő
+    table.sort(admins, function(a, b)
+        if a.online ~= b.online then
+            return a.online and not b.online
+        end
+        return a.level > b.level
+    end)
+
     TriggerClientEvent('dashboard:receiveAdminList', src, admins)
 end)
 
@@ -240,10 +294,10 @@ AddEventHandler('dashboard:claimAward', function(awardIndex)
     if not Config.AwardDetails[awardIndex] then return end
 
     local reward = Config.AwardDetails[awardIndex].reward
-    if reward.type == 'premium' then
-        MySQL.Async.execute('UPDATE users SET premium_points = premium_points + ? WHERE identifier = ?',
+    if reward.type == 'realcoin' then
+        MySQL.Async.execute('UPDATE users SET realcoins = realcoins + ? WHERE identifier = ?',
             { reward.amount, xPlayer.getIdentifier() })
-        local newBal = MySQL.Sync.fetchScalar('SELECT premium_points FROM users WHERE identifier = ?', { xPlayer.getIdentifier() }) or 0
+        local newBal = MySQL.Sync.fetchScalar('SELECT realcoins FROM users WHERE identifier = ?', { xPlayer.getIdentifier() }) or 0
         TriggerClientEvent('dashboard:updatePremiumBalance', src, newBal)
     elseif reward.type == 'money' then
         xPlayer.addAccountMoney('bank', reward.amount)
@@ -281,7 +335,7 @@ end)
 function GetPlayerPremiumPoints(src)
     local xPlayer = ESX.GetPlayerFromId(src)
     if not xPlayer then return 0 end
-    local result = MySQL.Sync.fetchScalar('SELECT premium_points FROM users WHERE identifier = ?', { xPlayer.getIdentifier() })
+    local result = MySQL.Sync.fetchScalar('SELECT realcoins FROM users WHERE identifier = ?', { xPlayer.getIdentifier() })
     return result or 0
 end
 

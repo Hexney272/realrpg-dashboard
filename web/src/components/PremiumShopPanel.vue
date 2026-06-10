@@ -4,15 +4,15 @@
       <div class="menu-tabs">
         <button v-for="(m,i) in shop" :key="i" :class="['tab-btn',{active:tab===i}]" @click="tab=i">{{ m.name }}</button>
       </div>
-      <div class="balance-box">Egyenleg: <strong>{{ fmt(balance) }} PP</strong></div>
+      <div class="balance-box">Egyenleg: <strong>{{ fmt(balance) }} RC</strong></div>
     </div>
     <div class="shop-grid" v-if="items.length">
       <div v-for="(item,i) in items" :key="i" class="shop-card">
         <div class="item-icon">{{ item.item==='money'?'💵':'🔫' }}</div>
         <div class="item-name">{{ item.item==='money' ? fmt(item.amount||0)+' $' : item.item }}</div>
-        <div class="item-price-tag"><span class="price-num">{{ fmt(item.price) }}</span> PP</div>
+        <div class="item-price-tag"><span class="price-num">{{ fmt(item.price) }}</span> RC</div>
         <button :class="['btn',item.price<=balance?'btn-blue':'btn-disabled btn-red']" :disabled="item.price>balance" @click="openBuyModal(i)">
-          {{ item.price<=balance?'VÁSÁRLÁS':'Nincs elég PP' }}
+          {{ item.price<=balance?'VÁSÁRLÁS':'Nincs elég RC' }}
         </button>
       </div>
     </div>
@@ -28,9 +28,9 @@
           <input v-model.number="buyAmount" class="input-field amount-input" type="number" min="1" max="99" />
         </div>
         <p class="modal-cost">
-          Fizetendő: <strong class="cost-val">{{ fmt((buyingItem?.price||0) * (buyAmount||1)) }} PP</strong>
+          Fizetendő: <strong class="cost-val">{{ fmt((buyingItem?.price||0) * (buyAmount||1)) }} RC</strong>
         </p>
-        <p v-if="(buyingItem?.price||0)*(buyAmount||1) > balance" class="modal-error">Nincs elég PrémiumPontod!</p>
+        <p v-if="(buyingItem?.price||0)*(buyAmount||1) > balance" class="modal-error">Nincs elég RealCoinod!</p>
         <div class="btn-row">
           <button class="btn btn-green" :disabled="(buyingItem?.price||0)*(buyAmount||1) > balance" @click="confirmBuy">Vásárlás</button>
           <button class="btn btn-red" @click="showBuyModal=false">Mégsem</button>

@@ -145,14 +145,14 @@ AddEventHandler('dashboard:buyVehicleSlot', function(amount)
 
     local totalCost = amount * Config.VehicleSlotPrice
     local identifier = xPlayer.getIdentifier()
-    local pp = MySQL.Sync.fetchScalar('SELECT premium_points FROM users WHERE identifier = ?', { identifier }) or 0
+    local pp = MySQL.Sync.fetchScalar('SELECT realcoins FROM users WHERE identifier = ?', { identifier }) or 0
 
     if pp < totalCost then
-        TriggerClientEvent('dashboard:notify', src, 'error', 'Nincs elég PrémiumPontod!')
+        TriggerClientEvent('dashboard:notify', src, 'error', 'Nincs elég RealCoinod!')
         return
     end
 
-    MySQL.Async.execute('UPDATE users SET premium_points = premium_points - ?, vehicle_slots = vehicle_slots + ? WHERE identifier = ?',
+    MySQL.Async.execute('UPDATE users SET realcoins = realcoins - ?, vehicle_slots = vehicle_slots + ? WHERE identifier = ?',
         { totalCost, amount, identifier })
 
     local newBalance = pp - totalCost

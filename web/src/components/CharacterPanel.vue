@@ -20,10 +20,10 @@
       <!-- Right: Extra details -->
       <div>
         <div class="card">
-          <h3 class="card-title">Prémium</h3>
+          <h3 class="card-title">RealCoin</h3>
           <div class="pp-big-row">
-            <span class="pp-big-value">{{ fmt(data.premiumBalance || 0) }}</span>
-            <span class="pp-big-label">PP</span>
+            <span class="pp-big-value">{{ fmt(data.realcoinBalance || 0) }}</span>
+            <span class="pp-big-label">RC</span>
           </div>
         </div>
 

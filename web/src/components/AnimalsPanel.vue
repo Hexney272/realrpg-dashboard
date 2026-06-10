@@ -48,7 +48,7 @@
       <div class="modal card">
         <h3 class="card-title">Háziállat vásárlás</h3>
         <select v-model="buyType" class="input-field">
-          <option v-for="a in types" :key="a.name" :value="a.name">{{ a.name }} - {{ a.price }} PP</option>
+          <option v-for="a in types" :key="a.name" :value="a.name">{{ a.name }} - {{ a.price }} RC</option>
         </select>
         <input v-model="buyName" class="input-field" placeholder="Állat neve" style="margin-top:8px"/>
         <div class="btn-row"><button class="btn btn-green" @click="doBuy">Vásárlás</button><button class="btn btn-red" @click="showBuy=false">Mégsem</button></div>

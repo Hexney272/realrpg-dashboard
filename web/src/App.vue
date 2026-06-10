@@ -12,7 +12,7 @@
           <span class="player-name">{{ playerData.name || 'Betöltés...' }}</span>
         </div>
         <div class="top-right">
-          <span class="pp-badge">{{ formatNumber(playerData.premiumBalance || 0) }} PP</span>
+          <span class="pp-badge">{{ formatNumber(playerData.realcoinBalance || 0) }} RC</span>
           <button class="close-x" @click="closeDashboard">&times;</button>
         </div>
       </div>
@@ -71,7 +71,7 @@
             <AnimalsPanel v-if="expandedCard.id === 'animals'" :animals="animals" />
             <GroupsPanel v-if="expandedCard.id === 'groups'" :groups="groups" />
             <SettingsPanel v-if="expandedCard.id === 'settings'" :settings="settings" :keybinds="keybinds" />
-            <PremiumShopPanel v-if="expandedCard.id === 'shop'" :shop="premiumShop" :balance="playerData.premiumBalance || 0" />
+            <PremiumShopPanel v-if="expandedCard.id === 'shop'" :shop="premiumShop" :balance="playerData.realcoinBalance || 0" />
             <NewsPanel v-if="expandedCard.id === 'news'" :news="news" />
             <AdminPanel v-if="expandedCard.id === 'admins'" :admins="admins" />
             <InvitePanel v-if="expandedCard.id === 'invite'" :inviteCode="inviteCode" :invitedPlayers="invitedPlayers" :awards="awards" />
@@ -150,13 +150,13 @@ const gridCards = computed(() => [
   {
     id: 'shop',
     colSpan: 2, rowSpan: 1,
-    topLabel1: 'Prémium',
+    topLabel1: 'RealCoin',
     topLabel2: 'shop',
     bgClass: 'bg-blue-accent',
     bgImage: './img/pp_bcg.png',
     bottomInfo: true,
     bottomLabel: 'Egyenleg:',
-    bottomValue: formatNumber(playerData.value.premiumBalance || 0) + ' PP',
+    bottomValue: formatNumber(playerData.value.realcoinBalance || 0) + ' RC',
   },
   {
     id: 'settings',
@@ -323,7 +323,7 @@ function handleMessage(event) {
       playerData.value = data.data || {}
       break
     case 'updatePremiumBalance':
-      playerData.value = { ...playerData.value, premiumBalance: data.balance }
+      playerData.value = { ...playerData.value, realcoinBalance: data.balance }
       break
     case 'updateVehicles':
       vehicles.value = data.vehicles || []

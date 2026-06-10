@@ -76,9 +76,9 @@
     <div v-if="showSlotBuy" class="modal-overlay" @click.self="showSlotBuy=false">
       <div class="modal card">
         <h3 class="card-title">Jármű slot vásárlás</h3>
-        <p class="modal-hint">100 PP / jármű slot</p>
+        <p class="modal-hint">100 RC / jármű slot</p>
         <input v-model="slotAmt" class="input-field" type="number" min="1" placeholder="Mennyiség"/>
-        <p class="modal-cost">Fizetendő: <strong class="cost-val">{{ fmt((slotAmt||0)*100) }} PP</strong></p>
+        <p class="modal-cost">Fizetendő: <strong class="cost-val">{{ fmt((slotAmt||0)*100) }} RC</strong></p>
         <div class="btn-row"><button class="btn btn-green" @click="buySlot">Vásárlás</button><button class="btn btn-red" @click="showSlotBuy=false">Mégsem</button></div>
       </div>
     </div>

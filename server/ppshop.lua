@@ -26,13 +26,13 @@ AddEventHandler('dashboard:buyPremiumItem', function(menuIndex, itemIndex, amoun
     local pp = GetPlayerPremiumPoints(src)
 
     if pp < totalCost then
-        TriggerClientEvent('dashboard:notify', src, 'error', 'Nincs eleg PremiumPontod!')
+        TriggerClientEvent('dashboard:notify', src, 'error', 'Nincs eleg RealCoinod!')
         return
     end
 
     -- Deduct PP
     local accountId = GetPlayerAccountId(src)
-    MySQL.Async.execute('UPDATE accounts SET premiumPoints = premiumPoints - ? WHERE accountId = ?',
+    MySQL.Async.execute('UPDATE accounts SET realcoins = realcoins - ? WHERE accountId = ?',
         { totalCost, accountId })
 
     -- Give item
@@ -93,5 +93,5 @@ RegisterCommand('addpremium', function(source, args, rawCommand)
     else
         TriggerClientEvent('dashboard:notify', src, 'success', msg)
     end
-    TriggerClientEvent('dashboard:notify', targetId, 'success', 'Kaptal ' .. amount .. ' PremiumPontot!')
+    TriggerClientEvent('dashboard:notify', targetId, 'success', 'Kaptal ' .. amount .. ' RealCoinot!')
 end, true)

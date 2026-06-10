@@ -34,7 +34,7 @@
 <script setup>
 defineProps({inviteCode:{type:String,default:''},invitedPlayers:{type:Array,default:()=>[]},awards:{type:Array,default:()=>[]}})
 function getLevel(m){return Math.floor((m||0)/600)+1}
-function fmtReward(r){if(!r)return'';const n=r.amount.toString().replace(/\B(?=(\d{3})+(?!\d))/g,'.');return r.type==='premium'?n+' PP':n+' $'}
+function fmtReward(r){if(!r)return'';const n=r.amount.toString().replace(/\B(?=(\d{3})+(?!\d))/g,'.');return r.type==='premium'?n+' RC':n+' $'}
 function claim(i){fetch(`https://${window.GetParentResourceName?window.GetParentResourceName():'realrpg-dashboard'}/claimAward`,{method:'POST',body:JSON.stringify({awardIndex:i})})}
 </script>
 <style scoped>

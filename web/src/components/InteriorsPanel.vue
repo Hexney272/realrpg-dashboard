@@ -26,7 +26,7 @@
     <div v-if="showBuy" class="modal-overlay" @click.self="showBuy=false">
       <div class="modal card">
         <h3 class="card-title">Interior slot vásárlás</h3>
-        <p class="modal-hint">100 PP / interior slot</p>
+        <p class="modal-hint">100 RC / interior slot</p>
         <input v-model="amt" class="input-field" type="number" min="1" placeholder="Mennyiség"/>
         <div class="btn-row"><button class="btn btn-green" @click="buy">Vásárlás</button><button class="btn btn-red" @click="showBuy=false">Mégsem</button></div>
       </div>

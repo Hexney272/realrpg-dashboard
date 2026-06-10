@@ -45,13 +45,13 @@ AddEventHandler('dashboard:buyAnimal', function(animalType, animalName)
     -- Check premium balance
     local pp = GetPlayerPremiumPoints(src)
     if pp < animalData.price then
-        TriggerClientEvent('dashboard:notify', src, 'error', 'Nincs eleg PremiumPontod!')
+        TriggerClientEvent('dashboard:notify', src, 'error', 'Nincs eleg RealCoinod!')
         return
     end
 
     -- Deduct PP
     local accountId = GetPlayerAccountId(src)
-    MySQL.Async.execute('UPDATE accounts SET premiumPoints = premiumPoints - ? WHERE accountId = ?',
+    MySQL.Async.execute('UPDATE accounts SET realcoins = realcoins - ? WHERE accountId = ?',
         { animalData.price, accountId })
 
     -- Create animal

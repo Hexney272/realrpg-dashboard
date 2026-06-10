@@ -3,10 +3,10 @@ Config = {}
 -- Dashboard open key
 Config.OpenKey = 'F1'
 
--- Interior slot price (in premium points)
+-- Interior slot price (in RealCoin)
 Config.InteriorSlotPrice = 100
 
--- Vehicle slot price (in premium points)
+-- Vehicle slot price (in RealCoin)
 Config.VehicleSlotPrice = 100
 
 -- Animals available for purchase {name, price}
@@ -111,7 +111,7 @@ Config.DefaultBinds = {
     { id = "sirenKey",      label = "Villogó",                      default = "P" },
 }
 
--- Premium shop menus (full content from MTA original)
+-- RealCoin shop menus (full content from MTA original)
 Config.PremiumShop = {
     {
         name = "Fegyverek",
@@ -336,42 +336,42 @@ Config.PremiumShop = {
 
 -- Award details for invite system
 Config.AwardDetails = {
-    { id = "invite:1",   label = "Hívj meg 1 embert",                                    reward = { amount = 1500,    type = "premium" } },
-    { id = "invite:3",   label = "Hívj meg 3 embert",                                    reward = { amount = 2000,    type = "premium" } },
-    { id = "invite:5",   label = "Hívj meg 5 embert",                                    reward = { amount = 2500,    type = "premium" } },
-    { id = "invite:10",  label = "Hívj meg 10 embert",                                   reward = { amount = 3000,    type = "premium" } },
-    { id = "invite:15",  label = "Hívj meg 15 embert",                                   reward = { amount = 3500,    type = "premium" } },
-    { id = "invite:20",  label = "Hívj meg 20 embert",                                   reward = { amount = 4000,    type = "premium" } },
-    { id = "invite:25",  label = "Hívj meg 25 embert",                                   reward = { amount = 4500,    type = "premium" } },
-    { id = "invite:30",  label = "Hívj meg 30 embert",                                   reward = { amount = 5000,    type = "premium" } },
-    { id = "invite:40",  label = "Hívj meg 40 embert",                                   reward = { amount = 6000,    type = "premium" } },
-    { id = "invite:50",  label = "Hívj meg 50 embert",                                   reward = { amount = 8000,    type = "premium" } },
+    { id = "invite:1",   label = "Hívj meg 1 embert",                                    reward = { amount = 1500,    type = "realcoin" } },
+    { id = "invite:3",   label = "Hívj meg 3 embert",                                    reward = { amount = 2000,    type = "realcoin" } },
+    { id = "invite:5",   label = "Hívj meg 5 embert",                                    reward = { amount = 2500,    type = "realcoin" } },
+    { id = "invite:10",  label = "Hívj meg 10 embert",                                   reward = { amount = 3000,    type = "realcoin" } },
+    { id = "invite:15",  label = "Hívj meg 15 embert",                                   reward = { amount = 3500,    type = "realcoin" } },
+    { id = "invite:20",  label = "Hívj meg 20 embert",                                   reward = { amount = 4000,    type = "realcoin" } },
+    { id = "invite:25",  label = "Hívj meg 25 embert",                                   reward = { amount = 4500,    type = "realcoin" } },
+    { id = "invite:30",  label = "Hívj meg 30 embert",                                   reward = { amount = 5000,    type = "realcoin" } },
+    { id = "invite:40",  label = "Hívj meg 40 embert",                                   reward = { amount = 6000,    type = "realcoin" } },
+    { id = "invite:50",  label = "Hívj meg 50 embert",                                   reward = { amount = 8000,    type = "realcoin" } },
     { id = "earn:1:lvl:10",  label = "1 meghívottad érje el a 10-es szintet!",           reward = { amount = 300000,  type = "money" } },
     { id = "earn:2:lvl:15",  label = "2 meghívottad érje el a 15-es szintet!",           reward = { amount = 800000,  type = "money" } },
     { id = "earn:5:lvl:20",  label = "5 meghívottad érje el a 20-es szintet!",           reward = { amount = 1000000, type = "money" } },
     { id = "earn:3:lvl:25",  label = "3 meghívottad érje el a 25-es szintet!",           reward = { amount = 1500000, type = "money" } },
-    { id = "earn:1:lvl:30",  label = "1 meghívottad érje el a 30-es szintet!",           reward = { amount = 12500,   type = "premium" } },
-    { id = "work:1",         label = "Kezdjen el 1 meghívott játékos dolgozni!",         reward = { amount = 3500,    type = "premium" } },
-    { id = "work:3",         label = "Kezdjen el 3 meghívott játékos dolgozni!",         reward = { amount = 5000,    type = "premium" } },
-    { id = "work:5",         label = "Kezdjen el 5 meghívott játékos dolgozni!",         reward = { amount = 7000,    type = "premium" } },
+    { id = "earn:1:lvl:30",  label = "1 meghívottad érje el a 30-es szintet!",           reward = { amount = 12500,   type = "realcoin" } },
+    { id = "work:1",         label = "Kezdjen el 1 meghívott játékos dolgozni!",         reward = { amount = 3500,    type = "realcoin" } },
+    { id = "work:3",         label = "Kezdjen el 3 meghívott játékos dolgozni!",         reward = { amount = 5000,    type = "realcoin" } },
+    { id = "work:5",         label = "Kezdjen el 5 meghívott játékos dolgozni!",         reward = { amount = 7000,    type = "realcoin" } },
     { id = "group:1",        label = "Csatlakozzon 1 meghívott játékos egy frakcióba",   reward = { amount = 85000,   type = "money" } },
     { id = "group:3",        label = "Csatlakozzon 3 meghívott játékos egy frakcióba",   reward = { amount = 185000,  type = "money" } },
     { id = "group:5",        label = "Csatlakozzon 5 meghívott játékos egy frakcióba",   reward = { amount = 245000,  type = "money" } },
-    { id = "group:10",       label = "Csatlakozzon 10 meghívott játékos egy frakcióba",  reward = { amount = 15000,   type = "premium" } },
+    { id = "group:10",       label = "Csatlakozzon 10 meghívott játékos egy frakcióba",  reward = { amount = 15000,   type = "realcoin" } },
     { id = "buy:1:vehicle",  label = "Vásároljon 1 meghívott játékos autót!",            reward = { amount = 100000,  type = "money" } },
     { id = "buy:3:vehicle",  label = "Vásároljon 3 meghívott játékos autót!",            reward = { amount = 150000,  type = "money" } },
     { id = "buy:5:vehicle",  label = "Vásároljon 5 meghívott játékos autót!",            reward = { amount = 300000,  type = "money" } },
-    { id = "buy:10:vehicle", label = "Vásároljon 10 meghívott játékos autót!",           reward = { amount = 10000,   type = "premium" } },
+    { id = "buy:10:vehicle", label = "Vásároljon 10 meghívott játékos autót!",           reward = { amount = 10000,   type = "realcoin" } },
     { id = "buy:1:house",    label = "Vásároljon 1 meghívott játékos házat!",            reward = { amount = 150000,  type = "money" } },
     { id = "buy:3:house",    label = "Vásároljon 3 meghívott játékos házat!",            reward = { amount = 175000,  type = "money" } },
-    { id = "buy:5:house",    label = "Vásároljon 5 meghívott játékos házat!",            reward = { amount = 7500,    type = "premium" } },
-    { id = "buy:10:house",   label = "Vásároljon 10 meghívott játékos házat!",           reward = { amount = 15000,   type = "premium" } },
+    { id = "buy:5:house",    label = "Vásároljon 5 meghívott játékos házat!",            reward = { amount = 7500,    type = "realcoin" } },
+    { id = "buy:10:house",   label = "Vásároljon 10 meghívott játékos házat!",           reward = { amount = 15000,   type = "realcoin" } },
     { id = "buy:1:house-vehicle",  label = "1 meghívottad vegyen autót ÉS házat!",       reward = { amount = 200000,  type = "money" } },
     { id = "buy:3:house-vehicle",  label = "3 meghívottad vegyen autót ÉS házat!",       reward = { amount = 350000,  type = "money" } },
-    { id = "buy:5:house-vehicle",  label = "5 meghívottad vegyen autót ÉS házat!",       reward = { amount = 12500,   type = "premium" } },
-    { id = "earn:together:lvl-100",   label = "Meghívottak összszintje érje el a 100-at!", reward = { amount = 25000,   type = "premium" } },
-    { id = "earn:together:hour-100",  label = "Meghívottak összesen 100 órát játszanak!", reward = { amount = 7500,    type = "premium" } },
-    { id = "have:self:allachievements", label = "Érd el az összes meghívásos jutalmat!",  reward = { amount = 35000,   type = "premium" } },
+    { id = "buy:5:house-vehicle",  label = "5 meghívottad vegyen autót ÉS házat!",       reward = { amount = 12500,   type = "realcoin" } },
+    { id = "earn:together:lvl-100",   label = "Meghívottak összszintje érje el a 100-at!", reward = { amount = 25000,   type = "realcoin" } },
+    { id = "earn:together:hour-100",  label = "Meghívottak összesen 100 órát játszanak!", reward = { amount = 7500,    type = "realcoin" } },
+    { id = "have:self:allachievements", label = "Érd el az összes meghívásos jutalmat!",  reward = { amount = 35000,   type = "realcoin" } },
 }
 
 -- News / Changelog

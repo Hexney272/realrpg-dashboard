@@ -36,7 +36,7 @@ end)
 -- Receive premium balance update
 RegisterNetEvent('dashboard:updatePremiumBalance')
 AddEventHandler('dashboard:updatePremiumBalance', function(balance)
-    playerData.premiumBalance = balance
+    playerData.realcoinBalance = balance
     SendNUIMessage({
         action = 'updatePremiumBalance',
         balance = balance
